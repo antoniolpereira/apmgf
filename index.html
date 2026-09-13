@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8" />
+  <title>Consulta de Associados</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f3f4f6;
+      color: #222;
+    }
+
+    header {
+      background: #003f7f;
+      color: white;
+      padding: 20px;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 30px auto;
+      padding: 0 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    input,
+    select,
+    button {
+      width: 100%;
+      padding: 10px;
+      font-size: 15px;
+      box-sizing: border-box;
+      border-radius: 6px;
+      border: 1px solid #bbb;
+    }
+
+    button {
+      background: #0057b8;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: #004494;
+    }
+
+    button.secondary {
+      background: #555;
+    }
+
+    button.secondary:hover {
+      background: #333;
+    }
+
+    .actions {
+      margin-top: 18px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .actions button {
+      width: auto;
+      min-width: 140px;
+    }
+
+    .message {
+      margin-top: 12px;
+      color: #444;
+    }
+
+    .error {
+      color: #b00020;
+    }
+
+    .success {
+      color: #0a7a2f;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+
+    th,
+    td {
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    th {
+      background: #e8e8e8;
+    }
+
+    td input {
+      min-width: 220px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .user-info {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    @media (max-width: 850px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      table {
+        font-size: 14px;
+      }
+
+      th,
+      td {
+        padding: 8px;
+      }
+
+      .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="topbar">
+      <h1>Consulta de Associados</h1>
+      <div id="userInfo" class="user-info"></div>
+    </div>
+  </header>
+
+  <main>
+    <section id="loginArea" class="card">
+      <h2>Entrar</h2>
+
+      <label for="email">Email</label>
+      <input type="email" id="email" placeholder="email@exemplo.pt" />
+
+      <label for="password" style="margin-top: 12px;">Password</label>
+      <input type="password" id="password" placeholder="Password" />
+
+      <div class="actions">
+        <button id="loginBtn">Entrar</button>
+      </div>
+
+      <div id="loginMessage" class="message"></div>
+    </section>
+
+    <section id="appArea" class="hidden">
+      <section class="card">
+        <h2>Pesquisar associados</h2>
+
+        <div class="grid">
+          <div>
+            <label for="numeroSocio">Número de sócio</label>
+            <input type="text" id="numeroSocio" placeholder="Ex.: 1001" />
+          </div>
+
+          <div>
+            <label for="nomeCompleto">Nome completo</label>
+            <input type="text" id="nomeCompleto" placeholder="Ex.: António Pereira" />
+          </div>
+
+          <div>
+            <label for="regiao">Região</label>
+            <select id="regiao"></select>
+          </div>
+
+          <div>
+            <label for="contacto">Contacto</label>
+            <input
+              type="text"
+              id="contacto"
+              list="contactosExistentes"
+              placeholder="Pesquisar ou escolher contacto"
+              maxlength="500"
+            />
+
+            <datalist id="contactosExistentes"></datalist>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="pesquisarBtn">Pesquisar</button>
+          <button id="limparBtn" class="secondary">Limpar</button>
+          <button id="logoutBtn" class="secondary">Sair</button>
+        </div>
+
+        <div id="message" class="message"></div>
+      </section>
+
+      <section class="card">
+        <table id="resultTable" class="hidden">
+          <thead>
+            <tr>
+              <th>N.º Sócio</th>
+              <th>Nome completo</th>
+              <th>Região</th>
+              <th>Contacto</th>
+              <th>Ação</th>
+            </tr>
+          </thead>
+          <tbody id="resultBody"></tbody>
+        </table>
+      </section>
+    </section>
+  </main>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    const SUPABASE_URL = "https://xyyyqplnioeiedxzjetm.supabase.co";
+
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5eXlxcGxuaW9laWVkeHpqZXRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMjA1ODIsImV4cCI6MjEwNDg5NjU4Mn0.A7bDFnZ5ii7QCYpSd3s3d_VmQaZu2I97imXsq79O8wo";
+
+    const REGIOES = [
+"AVEIRO",
+"BEJA",
+"BRAGA",
+"BRAGANÇA",
+"C. BRANCO",
+"COIMBRA",
+"ESTRANGEIRO",
+"ÉVORA",
+"FARO",
+"GUARDA",
+"LEIRIA",
+"LISBOA",
+"PORTALEGRE",
+"PORTO",
+"R.A.AÇORES",
+"R.A.MADEIRA",
+"SANTARÉM",
+"SETÚBAL",
+"V. CASTELO",
+"VILA REAL",
+"VISEU"
+    ];
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const loginArea = document.getElementById("loginArea");
+    const appArea = document.getElementById("appArea");
+    const loginMessage = document.getElementById("loginMessage");
+    const message = document.getElementById("message");
+    const userInfo = document.getElementById("userInfo");
+    const resultTable = document.getElementById("resultTable");
+    const resultBody = document.getElementById("resultBody");
+
+    document.getElementById("loginBtn").addEventListener("click", login);
+    document.getElementById("logoutBtn").addEventListener("click", logout);
+    document.getElementById("pesquisarBtn").addEventListener("click", pesquisar);
+    document.getElementById("limparBtn").addEventListener("click", limparPesquisa);
+
+    document.getElementById("email").addEventListener("keydown", function(event) {
+      if (event.key === "Enter") {
+        login();
+      }
+    });
+
+    document.getElementById("password").addEventListener("keydown", function(event) {
+      if (event.key === "Enter") {
+        login();
+      }
+    });
+
+    preencherDropdown("regiao", REGIOES, "Todas");
+
+    verificarSessao();
+
+    async function verificarSessao() {
+      const { data, error } = await supabase.auth.getSession();
+
+      if (error) {
+        mostrarLogin("Erro ao verificar sessão.", true);
+        return;
+      }
+
+      if (data.session) {
+        mostrarApp(data.session.user.email);
+      } else {
+        mostrarLogin();
+      }
+    }
+
+    async function login() {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+
+      loginMessage.textContent = "";
+      loginMessage.className = "message";
+
+      if (!email || !password) {
+        mostrarMensagem(loginMessage, "Preencha email e password.", true);
+        return;
+      }
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        mostrarMensagem(loginMessage, "Login inválido ou utilizador sem autorização.", true);
+        return;
+      }
+
+      mostrarApp(data.user.email);
+    }
+
+    async function logout() {
+      await supabase.auth.signOut();
+      limparPesquisa();
+      limparContactosExistentes();
+      mostrarLogin();
+    }
+
+    async function pesquisar() {
+      const numeroSocio = document.getElementById("numeroSocio").value.trim();
+      const nomeCompleto = document.getElementById("nomeCompleto").value.trim();
+      const regiao = document.getElementById("regiao").value.trim();
+      const contacto = document.getElementById("contacto").value.trim();
+
+      limparResultados();
+
+      if (!numeroSocio && !nomeCompleto && !regiao && !contacto) {
+        mostrarMensagem(message, "Preencha pelo menos um campo para pesquisar.", true);
+        return;
+      }
+
+      const { data, error } = await supabase.rpc("pesquisar_associados", {
+        p_numero_socio: numeroSocio || null,
+        p_nome_completo: nomeCompleto || null,
+        p_regiao: regiao || null,
+        p_contacto: contacto || null
+      });
+
+      if (error) {
+        mostrarMensagem(message, error.message || "Erro ao pesquisar.", true);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        mostrarMensagem(message, "Não foram encontrados resultados.", false);
+        return;
+      }
+
+      data.forEach(criarLinhaResultado);
+
+      resultTable.classList.remove("hidden");
+      mostrarMensagem(message, `${data.length} resultado(s) encontrado(s).`, false);
+    }
+
+    function criarLinhaResultado(associado) {
+      const tr = document.createElement("tr");
+
+      const tdNumero = document.createElement("td");
+      tdNumero.textContent = associado.numero_socio ?? "";
+
+      const tdNome = document.createElement("td");
+      tdNome.textContent = associado.nome_completo ?? "";
+
+      const tdRegiao = document.createElement("td");
+      tdRegiao.textContent = associado.regiao ?? "";
+
+      const tdContacto = document.createElement("td");
+
+      const inputContacto = document.createElement("input");
+      inputContacto.type = "text";
+      inputContacto.id = `contacto-${associado.id}`;
+      inputContacto.value = associado.contacto ?? "";
+      inputContacto.placeholder = "Escrever ou escolher contacto";
+      inputContacto.maxLength = 500;
+      inputContacto.setAttribute("list", "contactosExistentes");
+
+      tdContacto.appendChild(inputContacto);
+
+      const tdAcao = document.createElement("td");
+
+      const guardarBtn = document.createElement("button");
+      guardarBtn.textContent = "Guardar";
+      guardarBtn.addEventListener("click", () => guardarContacto(associado.id));
+
+      tdAcao.appendChild(guardarBtn);
+
+      tr.appendChild(tdNumero);
+      tr.appendChild(tdNome);
+      tr.appendChild(tdRegiao);
+      tr.appendChild(tdContacto);
+      tr.appendChild(tdAcao);
+
+      resultBody.appendChild(tr);
+    }
+
+    async function guardarContacto(id) {
+      const input = document.getElementById(`contacto-${id}`);
+      const novoContacto = input.value.trim();
+
+      const { error } = await supabase.rpc("atualizar_contacto_associado", {
+        p_id: id,
+        p_contacto: novoContacto
+      });
+
+      if (error) {
+        mostrarMensagem(message, error.message || "Erro ao guardar contacto.", true);
+        return;
+      }
+
+      await carregarContactosExistentes();
+
+      mostrarMensagem(message, "Contacto atualizado com sucesso.", false, true);
+    }
+
+    async function carregarContactosExistentes() {
+      const { data, error } = await supabase.rpc("listar_contactos_distintos");
+
+      if (error) {
+        console.error("Erro ao carregar contactos existentes:", error);
+        return;
+      }
+
+      const datalist = document.getElementById("contactosExistentes");
+      datalist.innerHTML = "";
+
+      if (!data) {
+        return;
+      }
+
+      data.forEach(item => {
+        if (!item.valor) {
+          return;
+        }
+
+        const option = document.createElement("option");
+        option.value = item.valor;
+        datalist.appendChild(option);
+      });
+    }
+
+    function limparContactosExistentes() {
+      const datalist = document.getElementById("contactosExistentes");
+      datalist.innerHTML = "";
+    }
+
+    function limparPesquisa() {
+      document.getElementById("numeroSocio").value = "";
+      document.getElementById("nomeCompleto").value = "";
+      document.getElementById("regiao").value = "";
+      document.getElementById("contacto").value = "";
+
+      limparResultados();
+
+      message.textContent = "";
+      message.className = "message";
+    }
+
+    function limparResultados() {
+      resultBody.innerHTML = "";
+      resultTable.classList.add("hidden");
+    }
+
+    function preencherDropdown(id, valores, textoInicial) {
+      const select = document.getElementById(id);
+      select.innerHTML = "";
+
+      const optionInicial = document.createElement("option");
+      optionInicial.value = "";
+      optionInicial.textContent = textoInicial;
+      select.appendChild(optionInicial);
+
+      valores.forEach(valor => {
+        const option = document.createElement("option");
+        option.value = valor;
+        option.textContent = valor;
+        select.appendChild(option);
+      });
+    }
+
+    function mostrarApp(email) {
+      loginArea.classList.add("hidden");
+      appArea.classList.remove("hidden");
+      userInfo.textContent = `Sessão iniciada: ${email}`;
+
+      carregarContactosExistentes();
+    }
+
+    function mostrarLogin(textoErro = "", erro = false) {
+      appArea.classList.add("hidden");
+      loginArea.classList.remove("hidden");
+      userInfo.textContent = "";
+
+      if (textoErro) {
+        mostrarMensagem(loginMessage, textoErro, erro);
+      } else {
+        loginMessage.textContent = "";
+        loginMessage.className = "message";
+      }
+    }
+
+    function mostrarMensagem(elemento, texto, erro = false, sucesso = false) {
+      elemento.textContent = texto;
+      elemento.className = "message";
+
+      if (erro) {
+        elemento.classList.add("error");
+      }
+
+      if (sucesso) {
+        elemento.classList.add("success");
+      }
+    }
+  </script>
+</body>
+</html>
