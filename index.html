@@ -93,6 +93,13 @@
       min-width: 140px;
     }
 
+    .row-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 130px;
+    }
+
     .message {
       margin-top: 12px;
       color: #444;
@@ -253,33 +260,34 @@
 
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+    import { PDFDocument } from "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm";
 
     const SUPABASE_URL = "https://xyyyqplnioeiedxzjetm.supabase.co";
 
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5eXlxcGxuaW9laWVkeHpqZXRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMjA1ODIsImV4cCI6MjEwNDg5NjU4Mn0.A7bDFnZ5ii7QCYpSd3s3d_VmQaZu2I97imXsq79O8wo";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6Inh5eXlxcGxuaW9laWVkeHpqZXRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMjA1ODIsImV4cCI6MjEwNDg5NjU4Mn0.A7bDFnZ5ii7QCYpSd3s3d_VmQaZu2I97imXsq79O8wo";
 
     const REGIOES = [
-"AVEIRO",
-"BEJA",
-"BRAGA",
-"BRAGANÇA",
-"C. BRANCO",
-"COIMBRA",
-"ESTRANGEIRO",
-"ÉVORA",
-"FARO",
-"GUARDA",
-"LEIRIA",
-"LISBOA",
-"PORTALEGRE",
-"PORTO",
-"R.A.AÇORES",
-"R.A.MADEIRA",
-"SANTARÉM",
-"SETÚBAL",
-"V. CASTELO",
-"VILA REAL",
-"VISEU"
+      "AVEIRO",
+      "BEJA",
+      "BRAGA",
+      "BRAGANÇA",
+      "C. BRANCO",
+      "COIMBRA",
+      "ESTRANGEIRO",
+      "ÉVORA",
+      "FARO",
+      "GUARDA",
+      "LEIRIA",
+      "LISBOA",
+      "PORTALEGRE",
+      "PORTO",
+      "R.A.AÇORES",
+      "R.A.MADEIRA",
+      "SANTARÉM",
+      "SETÚBAL",
+      "V. CASTELO",
+      "VILA REAL",
+      "VISEU"
     ];
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -422,11 +430,21 @@
 
       const tdAcao = document.createElement("td");
 
+      const divAcoes = document.createElement("div");
+      divAcoes.className = "row-actions";
+
       const guardarBtn = document.createElement("button");
       guardarBtn.textContent = "Guardar";
       guardarBtn.addEventListener("click", () => guardarContacto(associado.id));
 
-      tdAcao.appendChild(guardarBtn);
+      const pdfBtn = document.createElement("button");
+      pdfBtn.textContent = "Gerar PDF";
+      pdfBtn.className = "secondary";
+      pdfBtn.addEventListener("click", () => gerarPDFProponente(associado));
+
+      divAcoes.appendChild(guardarBtn);
+      divAcoes.appendChild(pdfBtn);
+      tdAcao.appendChild(divAcoes);
 
       tr.appendChild(tdNumero);
       tr.appendChild(tdNome);
@@ -454,6 +472,84 @@
       await carregarContactosExistentes();
 
       mostrarMensagem(message, "Contacto atualizado com sucesso.", false, true);
+    }
+
+    async function gerarPDFProponente(associado) {
+      try {
+        const nome = associado.nome_completo ?? "";
+        const numeroSocio = associado.numero_socio ?? "";
+
+        if (!nome || !numeroSocio) {
+          mostrarMensagem(message, "Não é possível gerar PDF sem nome e número de sócio.", true);
+          return;
+        }
+
+        mostrarMensagem(message, "A gerar PDF...", false);
+
+        const modeloUrl = "manifesto_proponentes_modelo.pdf";
+
+        const modeloBytes = await fetch(modeloUrl).then(response => {
+          if (!response.ok) {
+            throw new Error("Não foi possível carregar o PDF modelo. Confirme que o ficheiro manifesto_proponentes_modelo.pdf está na mesma pasta do index.html.");
+          }
+
+          return response.arrayBuffer();
+        });
+
+        const pdfDoc = await PDFDocument.load(modeloBytes);
+        const form = pdfDoc.getForm();
+
+        const campoNome = form.getTextField("proponente_nome");
+        const campoSocio = form.getTextField("proponente_socio");
+
+        campoNome.setText(String(nome));
+        campoSocio.setText(String(numeroSocio));
+
+        campoNome.enableReadOnly();
+        campoSocio.enableReadOnly();
+
+        form.flatten();
+
+        const pdfBytes = await pdfDoc.save();
+
+        const blob = new Blob([pdfBytes], {
+          type: "application/pdf"
+        });
+
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = criarNomeFicheiroPDF(nome, numeroSocio);
+
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+
+        setTimeout(() => {
+          URL.revokeObjectURL(url);
+        }, 1000);
+
+        mostrarMensagem(message, "PDF gerado com sucesso.", false, true);
+      } catch (error) {
+        console.error("Erro ao gerar PDF:", error);
+        mostrarMensagem(message, error.message || "Erro ao gerar PDF.", true);
+      }
+    }
+
+    function criarNomeFicheiroPDF(nome, numeroSocio) {
+      const nomeLimpo = String(nome)
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9]+/g, "_")
+        .replace(/^_+|_+$/g, "")
+        .toLowerCase();
+
+      const numeroSocioLimpo = String(numeroSocio)
+        .replace(/[^a-zA-Z0-9]+/g, "_")
+        .replace(/^_+|_+$/g, "");
+
+      return `proponente_${numeroSocioLimpo}_${nomeLimpo}.pdf`;
     }
 
     async function carregarContactosExistentes() {
