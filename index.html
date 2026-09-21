@@ -641,59 +641,63 @@
     }
 
     function criarLinhaResultado(associado) {
-      const tr = document.createElement("tr");
+  const tr = document.createElement("tr");
 
-      const tdNumero = document.createElement("td");
-      tdNumero.textContent = associado.numero_socio ?? "";
+  const tdNumero = document.createElement("td");
+  tdNumero.textContent = associado.numero_socio ?? "";
 
-      const tdNome = document.createElement("td");
-      tdNome.textContent = associado.nome_completo ?? "";
+  const tdNome = document.createElement("td");
+  tdNome.textContent = associado.nome_completo ?? "";
 
-      const tdRegiao = document.createElement("td");
-      tdRegiao.textContent = associado.regiao ?? "";
+  const tdRegiao = document.createElement("td");
+  tdRegiao.textContent = associado.regiao ?? "";
 
-      const tdContacto = document.createElement("td");
+  const tdContacto = document.createElement("td");
 
-      const inputContacto = document.createElement("input");
-      inputContacto.type = "text";
-      inputContacto.id = `contacto-${associado.id}`;
-      inputContacto.value = associado.contacto ?? "";
-      inputContacto.placeholder = "Escrever ou escolher contacto";
-      inputContacto.maxLength = 500;
-      inputContacto.setAttribute("list", "contactosExistentes");
+  const inputContacto = document.createElement("input");
+  inputContacto.type = "text";
+  inputContacto.id = `contacto-${associado.id}`;
+  inputContacto.value = associado.contacto ?? "";
+  inputContacto.placeholder = "Escrever ou escolher contacto";
+  inputContacto.maxLength = 500;
+  inputContacto.setAttribute("list", "contactosExistentes");
 
-      tdContacto.appendChild(inputContacto);
+  tdContacto.appendChild(inputContacto);
 
-      const tdAcao = document.createElement("td");
+  const tdAcao = document.createElement("td");
 
-      const divAcoes = document.createElement("div");
-      divAcoes.className = "row-actions";
+  const divAcoes = document.createElement("div");
+  divAcoes.className = "row-actions";
 
-      const guardarBtn = document.createElement("button");
-      guardarBtn.type = "button";
-      guardarBtn.textContent = "Guardar";
-      guardarBtn.addEventListener("click", () => guardarContacto(associado.id));
+  const guardarBtn = document.createElement("button");
+  guardarBtn.type = "button";
+  guardarBtn.textContent = "Guardar";
+  guardarBtn.addEventListener("click", () =>
+    guardarContacto(associado.id)
+  );
 
-      const pdfBtn = document.createElement("button");
-      pdfBtn.type = "button";
-      pdfBtn.textContent = "Gerar PDF";
-      pdfBtn.className = "secondary";
-      pdfBtn.addEventListener("click", () => gerarPDFProponente(associado));
+  const pdfBtn = document.createElement("button");
+  pdfBtn.type = "button";
+  pdfBtn.textContent = "Gerar PDF";
+  pdfBtn.className = "secondary";
 
-      divAcoes.appendChild(guardarBtn);
-      divAcoes.appendChild(pdfBtn);
+  pdfBtn.addEventListener("click", () =>
+    gerarPDFProponente(associado, tdAcao)
+  );
 
-      tdAcao.appendChild(divAcoes);
+  divAcoes.appendChild(guardarBtn);
+  divAcoes.appendChild(pdfBtn);
 
-      tr.appendChild(tdNumero);
-      tr.appendChild(tdNome);
-      tr.appendChild(tdRegiao);
-      tr.appendChild(tdContacto);
-      tr.appendChild(tdAcao);
+  tdAcao.appendChild(divAcoes);
 
-      resultBody.appendChild(tr);
-    }
+  tr.appendChild(tdNumero);
+  tr.appendChild(tdNome);
+  tr.appendChild(tdRegiao);
+  tr.appendChild(tdContacto);
+  tr.appendChild(tdAcao);
 
+  resultBody.appendChild(tr);
+}
     async function guardarContacto(id) {
       try {
         await obterSessaoValida();
@@ -729,7 +733,7 @@
       }
     }
 
-    async function gerarPDFProponente(associado) {
+   async function gerarPDFProponente(associado, tdAcao) {
   try {
     await obterSessaoValida();
 
@@ -858,11 +862,12 @@
     /*
      * Mostrar ações do manifesto.
      */
-    mostrarAcoesManifesto(
-      manifesto.token,
-      manifesto.estado,
-      manifesto.pdf_assinado_path
-    );
+   mostrarAcoesManifesto(
+  manifesto.token,
+  manifesto.estado,
+  manifesto.pdf_assinado_path,
+  tdAcao
+);
 
   } catch (error) {
     console.error(
@@ -960,110 +965,60 @@ function criarLinkUpload(token) {
     function mostrarAcoesManifesto(
   token,
   estado,
-  pdfAssinadoPath
+  pdfAssinadoPath,
+  tdAcao
 ) {
-  const anterior =
-    document.getElementById(
-      "manifestoActions"
-    );
+  if (!tdAcao || !token) return;
 
-  if (anterior) {
-    anterior.remove();
+  // Procurar uma área de acções do manifesto já existente
+  let manifestoActions = tdAcao.querySelector(".manifesto-actions");
+
+  if (!manifestoActions) {
+    manifestoActions = document.createElement("div");
+    manifestoActions.className = "manifesto-actions";
+    manifestoActions.style.marginTop = "8px";
+    manifestoActions.style.display = "flex";
+    manifestoActions.style.flexWrap = "wrap";
+    manifestoActions.style.gap = "6px";
+
+    tdAcao.appendChild(manifestoActions);
   }
 
-  const container =
-    document.createElement("div");
+  // Limpar botões anteriores
+  manifestoActions.innerHTML = "";
 
-  container.id =
-    "manifestoActions";
-
-  container.className =
-    "actions";
-
-  container.style.marginTop =
-    "12px";
-
-  /*
-   * Copiar link
-   */
-  const copiarBtn =
-    document.createElement("button");
-
+  const copiarBtn = document.createElement("button");
   copiarBtn.type = "button";
-  copiarBtn.textContent =
-    "Copiar link";
+  copiarBtn.textContent = "Copiar link";
+  copiarBtn.addEventListener("click", () => {
+    copiarLinkUpload(token);
+  });
 
-  copiarBtn.addEventListener(
-    "click",
-    () => copiarLinkUpload(token)
-  );
-
-  /*
-   * Abrir link
-   */
-  const abrirBtn =
-    document.createElement("button");
-
+  const abrirBtn = document.createElement("button");
   abrirBtn.type = "button";
-  abrirBtn.textContent =
-    "Abrir link";
+  abrirBtn.textContent = "Abrir link";
+  abrirBtn.className = "secondary";
 
-  abrirBtn.className =
-    "secondary";
+  abrirBtn.addEventListener("click", () => {
+    const link = criarLinkUpload(token);
+    window.open(link, "_blank");
+  });
 
-  abrirBtn.addEventListener(
-    "click",
-    () => {
-      const link =
-        criarLinkUpload(token);
+  manifestoActions.appendChild(copiarBtn);
+  manifestoActions.appendChild(abrirBtn);
 
-      window.open(
-        link,
-        "_blank"
-      );
-    }
-  );
-
-  container.appendChild(
-    copiarBtn
-  );
-
-  container.appendChild(
-    abrirBtn
-  );
-
-  /*
-   * PDF assinado, se já existir.
-   */
   if (pdfAssinadoPath) {
-    const pdfBtn =
-      document.createElement("button");
-
+    const pdfBtn = document.createElement("button");
     pdfBtn.type = "button";
+    pdfBtn.textContent = "Baixar PDF assinado";
+    pdfBtn.className = "success-button";
 
-    pdfBtn.textContent =
-      "Baixar PDF assinado";
+    pdfBtn.addEventListener("click", () => {
+      descarregarPDFManifesto(pdfAssinadoPath);
+    });
 
-    pdfBtn.className =
-      "success-button";
-
-    pdfBtn.addEventListener(
-      "click",
-      () =>
-        descarregarPDFManifesto(
-          pdfAssinadoPath
-        )
-    );
-
-    container.appendChild(
-      pdfBtn
-    );
+    manifestoActions.appendChild(pdfBtn);
   }
-
-  message.insertAdjacentElement(
-    "afterend",
-    container
-  );
 }
     function limparContactosExistentes() {
       const datalist = document.getElementById("contactosExistentes");
