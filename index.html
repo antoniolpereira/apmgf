@@ -32,7 +32,6 @@
 
     h2 {
       margin-top: 0;
-      color: #003f7f;
     }
 
     .card {
@@ -47,31 +46,6 @@
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 14px;
-    }
-
-    @media (max-width: 900px) {
-      .grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-
-    @media (max-width: 600px) {
-      .grid {
-        grid-template-columns: 1fr;
-      }
-
-      .topbar {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-
-      .actions {
-        flex-direction: column;
-      }
-
-      .actions button {
-        width: 100%;
-      }
     }
 
     label {
@@ -132,14 +106,6 @@
       background: #92400e;
     }
 
-    button.danger-button {
-      background: #b00020;
-    }
-
-    button.danger-button:hover {
-      background: #8c0019;
-    }
-
     .actions {
       margin-top: 18px;
       display: flex;
@@ -156,7 +122,7 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
-      min-width: 160px;
+      min-width: 130px;
     }
 
     .row-actions button {
@@ -220,22 +186,7 @@
 
     .user-info {
       font-size: 14px;
-      opacity: 0.95;
-      text-align: right;
-    }
-
-    .summary {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin: 14px 0;
-    }
-
-    .summary span {
-      background: #f3f4f6;
-      border: 1px solid #ddd;
-      padding: 8px 12px;
-      border-radius: 999px;
+      opacity: 0.9;
     }
 
     .status-pill {
@@ -270,18 +221,46 @@
       overflow-x: auto;
     }
 
-    .debug-box {
-      background: #111827;
-      color: #f9fafb;
-      padding: 12px;
-      border-radius: 8px;
-      overflow-x: auto;
-      font-size: 13px;
-      display: none;
+    .summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
     }
 
-    .debug-box.visible {
-      display: block;
+    .summary span {
+      background: #f3f4f6;
+      border: 1px solid #ddd;
+      padding: 8px 12px;
+      border-radius: 999px;
+    }
+
+    @media (max-width: 850px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      table {
+        font-size: 14px;
+      }
+
+      th,
+      td {
+        padding: 8px;
+      }
+
+      td input {
+        min-width: 160px;
+      }
+
+      .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .actions button {
+        width: 100%;
+      }
     }
   </style>
 </head>
@@ -289,109 +268,84 @@
 <body>
   <header>
     <div class="topbar">
-      <div>
-        <h1>Consulta de Associados</h1>
-        <div class="muted" style="color: rgba(255,255,255,0.85);">
-          Gestão de associados e manifestos assinados
-        </div>
-      </div>
-
-      <div class="user-info">
-        <div id="userInfo">A verificar sessão...</div>
-        <button id="logoutButton" class="secondary hidden" type="button" style="margin-top: 8px;">
-          Terminar sessão
-        </button>
-      </div>
+      <h1>Consulta de Associados</h1>
+      <div id="userInfo" class="user-info"></div>
     </div>
   </header>
 
   <main>
-    <section id="configWarning" class="card hidden">
-      <h2>Configuração em falta</h2>
-      <p class="error">
-        Tens de configurar o SUPABASE_URL e o SUPABASE_ANON_KEY no ficheiro index.html.
-      </p>
-    </section>
-
-    <section id="loginSection" class="card hidden">
+    <section id="loginArea" class="card">
       <h2>Entrar</h2>
 
-      <div class="grid">
-        <div>
-          <label for="emailInput">Email</label>
-          <input id="emailInput" type="email" autocomplete="email" placeholder="email@exemplo.pt" />
-        </div>
+      <label for="email">Email</label>
+      <input type="email" id="email" placeholder="email@exemplo.pt" />
 
-        <div>
-          <label for="passwordInput">Password</label>
-          <input id="passwordInput" type="password" autocomplete="current-password" placeholder="Password" />
-        </div>
-      </div>
+      <label for="password" style="margin-top: 12px;">Password</label>
+      <input type="password" id="password" placeholder="Password" />
 
       <div class="actions">
-        <button id="loginButton" type="button">Entrar</button>
+        <button id="loginBtn" type="button">Entrar</button>
       </div>
 
       <div id="loginMessage" class="message"></div>
     </section>
 
-    <section id="appSection" class="hidden">
+    <section id="appArea" class="hidden">
       <section class="card">
-        <h2>Pesquisa de associados</h2>
-
-        <p class="muted">
-          Esta pesquisa usa uma tabela chamada <strong>associados</strong>. Se a tua tabela tiver outro nome ou outros campos,
-          ajusta a função <code>pesquisarAssociados()</code> no JavaScript.
-        </p>
+        <h2>Pesquisar associados</h2>
 
         <div class="grid">
           <div>
-            <label for="searchTerm">Pesquisar</label>
-            <input id="searchTerm" type="text" placeholder="Número, nome ou email" />
+            <label for="numeroSocio">Número de sócio</label>
+            <input type="text" id="numeroSocio" placeholder="Ex.: 1001" />
           </div>
 
           <div>
-            <label for="searchField">Campo</label>
-            <select id="searchField">
-              <option value="geral">Pesquisa geral</option>
-              <option value="numero_socio">Número de sócio</option>
-              <option value="nome_completo">Nome</option>
-              <option value="email">Email</option>
-            </select>
+            <label for="nomeCompleto">Nome completo</label>
+            <input type="text" id="nomeCompleto" placeholder="Ex.: António Pereira" />
           </div>
 
           <div>
-            <label for="limitInput">Limite</label>
-            <select id="limitInput">
-              <option value="25">25 resultados</option>
-              <option value="50">50 resultados</option>
-              <option value="100">100 resultados</option>
-            </select>
+            <label for="regiao">Região</label>
+            <select id="regiao"></select>
+          </div>
+
+          <div>
+            <label for="contacto">Contacto</label>
+            <input
+              type="text"
+              id="contacto"
+              list="contactosExistentes"
+              placeholder="Pesquisar ou escolher contacto"
+              maxlength="500"
+            />
+
+            <datalist id="contactosExistentes"></datalist>
           </div>
         </div>
 
         <div class="actions">
-          <button id="searchButton" type="button">Pesquisar</button>
-          <button id="clearSearchButton" class="secondary" type="button">Limpar</button>
+          <button id="pesquisarBtn" type="button">Pesquisar</button>
+          <button id="limparBtn" class="secondary" type="button">Limpar</button>
+          <button id="logoutBtn" class="secondary" type="button">Sair</button>
         </div>
 
-        <div id="searchMessage" class="message"></div>
+        <div id="message" class="message"></div>
+      </section>
 
-        <div class="table-wrapper" style="margin-top: 16px;">
-          <table>
+      <section class="card">
+        <div class="table-wrapper">
+          <table id="resultTable" class="hidden">
             <thead>
               <tr>
-                <th>Número</th>
-                <th>Nome</th>
-                <th>Email</th>
-                <th>Telefone</th>
+                <th>N.º Sócio</th>
+                <th>Nome completo</th>
+                <th>Região</th>
+                <th>Contacto</th>
+                <th>Ação</th>
               </tr>
             </thead>
-            <tbody id="associadosBody">
-              <tr>
-                <td colspan="4" class="muted">Faz uma pesquisa para ver resultados.</td>
-              </tr>
-            </tbody>
+            <tbody id="resultBody"></tbody>
           </table>
         </div>
       </section>
@@ -399,517 +353,716 @@
       <section class="card">
         <h2>Estado dos manifestos</h2>
 
+        <p class="muted">
+          A lista não é carregada automaticamente. Escolhe primeiro o estado que queres consultar.
+        </p>
+
         <div class="grid">
           <div>
             <label for="candidaturaInput">Candidatura</label>
             <input id="candidaturaInput" type="text" value="candidatura-2025" />
           </div>
-
-          <div>
-            <label for="estadoFiltro">Filtrar por estado</label>
-            <select id="estadoFiltro">
-              <option value="">Todos</option>
-              <option value="pendente">Pendente</option>
-              <option value="enviado">Enviado</option>
-              <option value="recebido">Recebido</option>
-              <option value="invalidado">Invalidado</option>
-            </select>
-          </div>
         </div>
 
         <div class="actions">
-          <button id="loadManifestosButton" type="button">Carregar manifestos</button>
-          <button id="exportCsvButton" class="success-button" type="button">Exportar CSV</button>
-          <button id="toggleDebugButton" class="secondary" type="button">Mostrar diagnóstico</button>
+          <button id="manifestosPendentesBtn" type="button">Pendente</button>
+          <button id="manifestosEnviadosBtn" type="button">Enviado</button>
+          <button id="manifestosRecebidosBtn" class="success-button" type="button">Recebido</button>
+          <button id="limparManifestosBtn" class="secondary" type="button">Limpar</button>
+          <button id="exportarManifestosBtn" class="secondary" type="button">Exportar CSV</button>
         </div>
 
         <div id="manifestosMessage" class="message"></div>
-
         <div id="manifestosSummary" class="summary"></div>
 
-        <div class="table-wrapper">
-          <table>
+        <div class="table-wrapper" style="margin-top: 16px;">
+          <table id="manifestosTable" class="hidden">
             <thead>
               <tr>
-                <th>Número</th>
-                <th>Nome</th>
+                <th>N.º Sócio</th>
+                <th>Nome completo</th>
                 <th>Estado</th>
                 <th>PDF</th>
                 <th>Atualizado</th>
                 <th>Ações</th>
               </tr>
             </thead>
-            <tbody id="manifestosBody">
-              <tr>
-                <td colspan="6" class="muted">Carrega os manifestos para ver resultados.</td>
-              </tr>
-            </tbody>
+            <tbody id="manifestosBody"></tbody>
           </table>
         </div>
-
-        <pre id="debugBox" class="debug-box"></pre>
       </section>
     </section>
   </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+    import { PDFDocument } from "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm";
 
-  <script>
-    "use strict";
-
-    /*
-      CONFIGURAÇÃO OBRIGATÓRIA
-      Substitui estes dois valores pelos dados reais do teu projeto Supabase.
-    */
     const SUPABASE_URL = "https://xyyyqplnioeiedxzjetm.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5eXlxcGxuaW9laWVkeHpqZXRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkzMjA1ODIsImV4cCI6MjEwNDg5NjU4Mn0.A7bDFnZ5ii7QCYpSd3s3d_VmQaZu2I97imXsq79O8wo";
 
     /*
-      CONFIGURAÇÃO DO SISTEMA
+      Cola aqui a tua anon public key.
+      Não uses service_role no frontend.
     */
+    const SUPABASE_ANON_KEY = "COLOCA_AQUI_A_TUA_ANON_PUBLIC_KEY";
+
     const BUCKET_MANIFESTOS = "manifestos-assinados";
-    const DEFAULT_CANDIDATURA = "candidatura-2025";
     const UPLOAD_PAGE = "upload.html";
 
-    /*
-      Se a tabela dos associados tiver outro nome, altera aqui.
-    */
-    const ASSOCIADOS_TABLE = "associados";
+    const REGIOES = [
+      "AVEIRO",
+      "BEJA",
+      "BRAGA",
+      "BRAGANÇA",
+      "C. BRANCO",
+      "COIMBRA",
+      "ESTRANGEIRO",
+      "ÉVORA",
+      "FARO",
+      "GUARDA",
+      "LEIRIA",
+      "LISBOA",
+      "PORTALEGRE",
+      "PORTO",
+      "R.A.AÇORES",
+      "R.A.MADEIRA",
+      "SANTARÉM",
+      "SETÚBAL",
+      "V. CASTELO",
+      "VILA REAL",
+      "VISEU"
+    ];
 
-    let supabaseClient = null;
-    let currentManifestos = [];
-
-    const elements = {};
-
-    document.addEventListener("DOMContentLoaded", iniciarPagina);
-
-    async function iniciarPagina() {
-      guardarElementos();
-      ligarEventos();
-
-      if (!configuracaoValida()) {
-        mostrar(elements.configWarning);
-        esconder(elements.loginSection);
-        esconder(elements.appSection);
-        return;
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
       }
+    });
 
-      try {
-        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      } catch (err) {
-        mostrarErro(elements.loginMessage, "Erro ao criar cliente Supabase: " + mensagemErro(err));
-        console.error(err);
-        return;
+    const loginArea = document.getElementById("loginArea");
+    const appArea = document.getElementById("appArea");
+    const loginMessage = document.getElementById("loginMessage");
+    const message = document.getElementById("message");
+    const userInfo = document.getElementById("userInfo");
+    const resultTable = document.getElementById("resultTable");
+    const resultBody = document.getElementById("resultBody");
+
+    const manifestosTable = document.getElementById("manifestosTable");
+    const manifestosBody = document.getElementById("manifestosBody");
+    const manifestosMessage = document.getElementById("manifestosMessage");
+    const manifestosSummary = document.getElementById("manifestosSummary");
+
+    let manifestosAtuais = [];
+    let estadoManifestosAtual = "";
+
+    document.getElementById("loginBtn").addEventListener("click", login);
+    document.getElementById("logoutBtn").addEventListener("click", logout);
+    document.getElementById("pesquisarBtn").addEventListener("click", pesquisar);
+    document.getElementById("limparBtn").addEventListener("click", limparPesquisa);
+
+    document.getElementById("manifestosPendentesBtn").addEventListener("click", () => carregarManifestosPorEstado("pendente"));
+    document.getElementById("manifestosEnviadosBtn").addEventListener("click", () => carregarManifestosPorEstado("enviado"));
+    document.getElementById("manifestosRecebidosBtn").addEventListener("click", () => carregarManifestosPorEstado("recebido"));
+    document.getElementById("limparManifestosBtn").addEventListener("click", limparManifestos);
+    document.getElementById("exportarManifestosBtn").addEventListener("click", exportarManifestosCSV);
+
+    document.getElementById("email").addEventListener("keydown", function(event) {
+      if (event.key === "Enter") {
+        login();
       }
+    });
 
-      await verificarSessao();
-    }
+    document.getElementById("password").addEventListener("keydown", function(event) {
+      if (event.key === "Enter") {
+        login();
+      }
+    });
 
-    function guardarElementos() {
-      elements.configWarning = document.getElementById("configWarning");
-      elements.loginSection = document.getElementById("loginSection");
-      elements.appSection = document.getElementById("appSection");
-
-      elements.userInfo = document.getElementById("userInfo");
-      elements.logoutButton = document.getElementById("logoutButton");
-
-      elements.emailInput = document.getElementById("emailInput");
-      elements.passwordInput = document.getElementById("passwordInput");
-      elements.loginButton = document.getElementById("loginButton");
-      elements.loginMessage = document.getElementById("loginMessage");
-
-      elements.searchTerm = document.getElementById("searchTerm");
-      elements.searchField = document.getElementById("searchField");
-      elements.limitInput = document.getElementById("limitInput");
-      elements.searchButton = document.getElementById("searchButton");
-      elements.clearSearchButton = document.getElementById("clearSearchButton");
-      elements.searchMessage = document.getElementById("searchMessage");
-      elements.associadosBody = document.getElementById("associadosBody");
-
-      elements.candidaturaInput = document.getElementById("candidaturaInput");
-      elements.estadoFiltro = document.getElementById("estadoFiltro");
-      elements.loadManifestosButton = document.getElementById("loadManifestosButton");
-      elements.exportCsvButton = document.getElementById("exportCsvButton");
-      elements.toggleDebugButton = document.getElementById("toggleDebugButton");
-      elements.manifestosMessage = document.getElementById("manifestosMessage");
-      elements.manifestosSummary = document.getElementById("manifestosSummary");
-      elements.manifestosBody = document.getElementById("manifestosBody");
-      elements.debugBox = document.getElementById("debugBox");
-    }
-
-    function ligarEventos() {
-      elements.loginButton.addEventListener("click", fazerLogin);
-      elements.logoutButton.addEventListener("click", fazerLogout);
-
-      elements.searchButton.addEventListener("click", pesquisarAssociados);
-      elements.clearSearchButton.addEventListener("click", limparPesquisa);
-
-      elements.searchTerm.addEventListener("keydown", function (event) {
-        if (event.key === "Enter") {
-          pesquisarAssociados();
-        }
-      });
-
-      elements.loadManifestosButton.addEventListener("click", carregarManifestos);
-      elements.estadoFiltro.addEventListener("change", renderizarManifestos);
-      elements.exportCsvButton.addEventListener("click", exportarCSV);
-      elements.toggleDebugButton.addEventListener("click", alternarDiagnostico);
-    }
-
-    function configuracaoValida() {
-      const urlOk = SUPABASE_URL &&
-        SUPABASE_URL.includes("supabase.co") &&
-        !SUPABASE_URL.includes("TEU-PROJETO");
-
-      const keyOk = SUPABASE_ANON_KEY &&
-        SUPABASE_ANON_KEY.length > 20 &&
-        !SUPABASE_ANON_KEY.includes("TUA_ANON_KEY");
-
-      return urlOk && keyOk;
-    }
+    preencherDropdown("regiao", REGIOES, "Todas");
+    verificarSessao();
 
     async function verificarSessao() {
-      try {
-        const { data, error } = await supabaseClient.auth.getSession();
+      const { data, error } = await supabase.auth.getSession();
 
-        if (error) {
-          console.error("Erro ao verificar sessão:", error);
-          mostrarLogin();
-          return;
-        }
+      if (error) {
+        mostrarLogin("Erro ao verificar sessão.", true);
+        return;
+      }
 
-        const session = data && data.session ? data.session : null;
-
-        if (session && session.user) {
-          mostrarApp(session.user);
-          await carregarManifestos();
-        } else {
-          mostrarLogin();
-        }
-      } catch (err) {
-        console.error(err);
+      if (data.session) {
+        mostrarApp(data.session.user.email);
+      } else {
         mostrarLogin();
       }
     }
 
-    function mostrarLogin() {
-      elements.userInfo.textContent = "Sessão não iniciada";
-      mostrar(elements.loginSection);
-      esconder(elements.appSection);
-      esconder(elements.logoutButton);
+    async function obterSessaoValida() {
+      const { data, error } = await supabase.auth.getSession();
+
+      if (error) {
+        throw new Error("Erro ao verificar a sessão.");
+      }
+
+      const session = data.session;
+
+      if (!session) {
+        throw new Error("Sessão expirada. Volte a iniciar sessão.");
+      }
+
+      const agora = Date.now();
+      const margemSeguranca = 60 * 1000;
+
+      if (session.expires_at) {
+        const expiraEm = session.expires_at * 1000;
+
+        if (agora >= expiraEm - margemSeguranca) {
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+
+          if (refreshError || !refreshData.session) {
+            await supabase.auth.signOut();
+            throw new Error("Sessão expirada. Volte a iniciar sessão.");
+          }
+
+          return refreshData.session;
+        }
+      }
+
+      return session;
     }
 
-    function mostrarApp(user) {
-      elements.userInfo.textContent = user && user.email ? user.email : "Sessão iniciada";
-      esconder(elements.loginSection);
-      mostrar(elements.appSection);
-      mostrar(elements.logoutButton);
+    function erroDeSessaoExpirada(error) {
+      const texto = String(error?.message || error || "").toLowerCase();
+
+      return (
+        texto.includes("jwt expired") ||
+        texto.includes("invalid jwt") ||
+        texto.includes("session expired") ||
+        texto.includes("sessão expirada")
+      );
     }
 
-    async function fazerLogin() {
-      limparMensagem(elements.loginMessage);
+    async function tratarErroSessao(error, elementoMensagem) {
+      if (erroDeSessaoExpirada(error)) {
+        await supabase.auth.signOut();
+        limparPesquisa();
+        limparContactosExistentes();
+        limparManifestos();
+        mostrarLogin("Sessão expirada. Volte a iniciar sessão.", true);
+        return true;
+      }
 
-      const email = elements.emailInput.value.trim();
-      const password = elements.passwordInput.value;
+      mostrarMensagem(elementoMensagem, error.message || "Erro inesperado.", true);
+      return false;
+    }
+
+    async function login() {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+
+      loginMessage.textContent = "";
+      loginMessage.className = "message";
 
       if (!email || !password) {
-        mostrarErro(elements.loginMessage, "Indica o email e a password.");
+        mostrarMensagem(loginMessage, "Preencha email e password.", true);
         return;
       }
 
-      setLoading(elements.loginButton, true, "A entrar...");
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
 
-      try {
-        const { data, error } = await supabaseClient.auth.signInWithPassword({
-          email,
-          password
-        });
-
-        if (error) {
-          mostrarErro(elements.loginMessage, "Erro ao entrar: " + error.message);
-          return;
-        }
-
-        if (!data || !data.user) {
-          mostrarErro(elements.loginMessage, "Não foi possível iniciar sessão.");
-          return;
-        }
-
-        mostrarSucesso(elements.loginMessage, "Sessão iniciada.");
-        mostrarApp(data.user);
-        await carregarManifestos();
-
-      } catch (err) {
-        console.error(err);
-        mostrarErro(elements.loginMessage, "Erro inesperado ao iniciar sessão: " + mensagemErro(err));
-      } finally {
-        setLoading(elements.loginButton, false, "Entrar");
+      if (error) {
+        console.error("Erro de login:", error);
+        mostrarMensagem(loginMessage, "Login inválido ou utilizador sem autorização.", true);
+        return;
       }
+
+      mostrarApp(data.user.email);
     }
 
-    async function fazerLogout() {
-      try {
-        await supabaseClient.auth.signOut();
-      } catch (err) {
-        console.error(err);
-      }
-
-      currentManifestos = [];
+    async function logout() {
+      await supabase.auth.signOut();
+      limparPesquisa();
+      limparContactosExistentes();
+      limparManifestos();
       mostrarLogin();
     }
 
-    async function pesquisarAssociados() {
-      limparMensagem(elements.searchMessage);
-
-      const termo = elements.searchTerm.value.trim();
-      const campo = elements.searchField.value;
-      const limite = parseInt(elements.limitInput.value, 10) || 25;
-
-      if (!termo) {
-        mostrarErro(elements.searchMessage, "Escreve um termo de pesquisa.");
-        return;
-      }
-
-      setLoading(elements.searchButton, true, "A pesquisar...");
-
+    async function pesquisar() {
       try {
-        let query = supabaseClient
-          .from(ASSOCIADOS_TABLE)
-          .select("id, numero_socio, nome_completo, email, telefone")
-          .limit(limite);
+        await obterSessaoValida();
 
-        if (campo === "numero_socio") {
-          query = query.ilike("numero_socio", "%" + termo + "%");
-        } else if (campo === "nome_completo") {
-          query = query.ilike("nome_completo", "%" + termo + "%");
-        } else if (campo === "email") {
-          query = query.ilike("email", "%" + termo + "%");
-        } else {
-          query = query.or(
-            "numero_socio.ilike.%" + termo + "%," +
-            "nome_completo.ilike.%" + termo + "%," +
-            "email.ilike.%" + termo + "%"
-          );
-        }
+        limparResultados();
 
-        const { data, error } = await query;
+        const numeroSocio = document.getElementById("numeroSocio").value.trim();
+        const nomeCompleto = document.getElementById("nomeCompleto").value.trim();
+        const regiao = document.getElementById("regiao").value.trim();
+        const contacto = document.getElementById("contacto").value.trim();
 
-        if (error) {
-          console.error("Erro na pesquisa:", error);
-          mostrarErro(
-            elements.searchMessage,
-            "Erro na pesquisa. Confirma se a tabela '" + ASSOCIADOS_TABLE + "' e os campos existem."
-          );
-          renderizarAssociados([]);
+        if (!numeroSocio && !nomeCompleto && !regiao && !contacto) {
+          mostrarMensagem(message, "Preencha pelo menos um campo para pesquisar.", true);
           return;
         }
 
-        renderizarAssociados(data || []);
-        mostrarSucesso(elements.searchMessage, (data || []).length + " resultado(s) encontrado(s).");
+        mostrarMensagem(message, "A pesquisar...", false);
 
-      } catch (err) {
-        console.error(err);
-        mostrarErro(elements.searchMessage, "Erro inesperado na pesquisa: " + mensagemErro(err));
-        renderizarAssociados([]);
-      } finally {
-        setLoading(elements.searchButton, false, "Pesquisar");
+        const { data, error } = await supabase.rpc("pesquisar_associados", {
+          p_numero_socio: numeroSocio || null,
+          p_nome_completo: nomeCompleto || null,
+          p_regiao: regiao || null,
+          p_contacto: contacto || null
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        if (!data || data.length === 0) {
+          mostrarMensagem(message, "Não foram encontrados resultados.", false);
+          return;
+        }
+
+        data.forEach(criarLinhaResultado);
+
+        resultTable.classList.remove("hidden");
+        mostrarMensagem(message, `${data.length} resultado(s) encontrado(s).`, false);
+      } catch (error) {
+        console.error("Erro ao pesquisar:", error);
+
+        const erroTratado = await tratarErroSessao(error, message);
+
+        if (!erroTratado) {
+          mostrarMensagem(message, error.message || "Erro ao pesquisar.", true);
+        }
       }
     }
 
-    function renderizarAssociados(lista) {
-      limparTabela(elements.associadosBody);
+    function criarLinhaResultado(associado) {
+      const tr = document.createElement("tr");
 
-      if (!lista || lista.length === 0) {
-        adicionarLinhaVazia(elements.associadosBody, 4, "Sem resultados.");
-        return;
+      const tdNumero = document.createElement("td");
+      tdNumero.textContent = associado.numero_socio ?? "";
+
+      const tdNome = document.createElement("td");
+      tdNome.textContent = associado.nome_completo ?? "";
+
+      const tdRegiao = document.createElement("td");
+      tdRegiao.textContent = associado.regiao ?? "";
+
+      const tdContacto = document.createElement("td");
+
+      const inputContacto = document.createElement("input");
+      inputContacto.type = "text";
+      inputContacto.id = `contacto-${associado.id}`;
+      inputContacto.value = associado.contacto ?? "";
+      inputContacto.placeholder = "Escrever ou escolher contacto";
+      inputContacto.maxLength = 500;
+      inputContacto.setAttribute("list", "contactosExistentes");
+
+      tdContacto.appendChild(inputContacto);
+
+      const tdAcao = document.createElement("td");
+
+      const divAcoes = document.createElement("div");
+      divAcoes.className = "row-actions";
+
+      const guardarBtn = document.createElement("button");
+      guardarBtn.type = "button";
+      guardarBtn.textContent = "Guardar";
+      guardarBtn.addEventListener("click", () => guardarContacto(associado.id));
+
+      const pdfBtn = document.createElement("button");
+      pdfBtn.type = "button";
+      pdfBtn.textContent = "Gerar PDF";
+      pdfBtn.className = "secondary";
+      pdfBtn.addEventListener("click", () => gerarPDFProponente(associado));
+
+      divAcoes.appendChild(guardarBtn);
+      divAcoes.appendChild(pdfBtn);
+
+      tdAcao.appendChild(divAcoes);
+
+      tr.appendChild(tdNumero);
+      tr.appendChild(tdNome);
+      tr.appendChild(tdRegiao);
+      tr.appendChild(tdContacto);
+      tr.appendChild(tdAcao);
+
+      resultBody.appendChild(tr);
+    }
+
+    async function guardarContacto(id) {
+      try {
+        await obterSessaoValida();
+
+        const input = document.getElementById(`contacto-${id}`);
+
+        if (!input) {
+          throw new Error("Campo de contacto não encontrado.");
+        }
+
+        const novoContacto = input.value.trim();
+
+        const { error } = await supabase.rpc("atualizar_contacto_associado", {
+          p_id: id,
+          p_contacto: novoContacto
+        });
+
+        if (error) {
+          throw error;
+        }
+
+        await carregarContactosExistentes();
+
+        mostrarMensagem(message, "Contacto atualizado com sucesso.", false, true);
+      } catch (error) {
+        console.error("Erro ao guardar contacto:", error);
+
+        const erroTratado = await tratarErroSessao(error, message);
+
+        if (!erroTratado) {
+          mostrarMensagem(message, error.message || "Erro ao guardar contacto.", true);
+        }
       }
+    }
 
-      lista.forEach(function (item) {
-        const tr = document.createElement("tr");
+    async function gerarPDFProponente(associado) {
+      try {
+        const nome = associado.nome_completo ?? "";
+        const numeroSocio = associado.numero_socio ?? "";
 
-        adicionarCelula(tr, item.numero_socio || "");
-        adicionarCelula(tr, item.nome_completo || "");
-        adicionarCelula(tr, item.email || "");
-        adicionarCelula(tr, item.telefone || "");
+        if (!nome || !numeroSocio) {
+          mostrarMensagem(message, "Não é possível gerar PDF sem nome e número de sócio.", true);
+          return;
+        }
 
-        elements.associadosBody.appendChild(tr);
-      });
+        mostrarMensagem(message, "A gerar PDF...", false);
+
+        const modeloUrl = "manifesto_proponentes_modelo.pdf";
+        const response = await fetch(modeloUrl);
+
+        if (!response.ok) {
+          throw new Error("Não foi possível carregar o PDF modelo. Confirme que o ficheiro manifesto_proponentes_modelo.pdf está na mesma pasta do index.html.");
+        }
+
+        const modeloBytes = await response.arrayBuffer();
+
+        const pdfDoc = await PDFDocument.load(modeloBytes);
+        const form = pdfDoc.getForm();
+
+        const campoNome = form.getTextField("proponente_nome");
+        const campoSocio = form.getTextField("proponente_socio");
+
+        campoNome.setText(String(nome));
+        campoSocio.setText(String(numeroSocio));
+
+        campoNome.enableReadOnly();
+        campoSocio.enableReadOnly();
+
+        form.flatten();
+
+        const pdfBytes = await pdfDoc.save();
+
+        const blob = new Blob([pdfBytes], {
+          type: "application/pdf"
+        });
+
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = criarNomeFicheiroPDF(nome, numeroSocio);
+
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+
+        setTimeout(() => {
+          URL.revokeObjectURL(url);
+        }, 1000);
+
+        mostrarMensagem(message, "PDF gerado com sucesso.", false, true);
+      } catch (error) {
+        console.error("Erro ao gerar PDF:", error);
+        mostrarMensagem(message, error.message || "Erro ao gerar PDF.", true);
+      }
+    }
+
+    function criarNomeFicheiroPDF(nome, numeroSocio) {
+      const nomeLimpo = String(nome)
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9]+/g, "_")
+        .replace(/^_+|_+$/g, "")
+        .toLowerCase();
+
+      const numeroSocioLimpo = String(numeroSocio)
+        .replace(/[^a-zA-Z0-9]+/g, "_")
+        .replace(/^_+|_+$/g, "");
+
+      return `proponente_${numeroSocioLimpo}_${nomeLimpo}.pdf`;
+    }
+
+    async function carregarContactosExistentes() {
+      try {
+        await obterSessaoValida();
+
+        const { data, error } = await supabase.rpc("listar_contactos_distintos");
+
+        if (error) {
+          throw error;
+        }
+
+        const datalist = document.getElementById("contactosExistentes");
+        datalist.innerHTML = "";
+
+        if (!data) {
+          return;
+        }
+
+        data.forEach(item => {
+          if (!item.valor) {
+            return;
+          }
+
+          const option = document.createElement("option");
+          option.value = item.valor;
+          datalist.appendChild(option);
+        });
+      } catch (error) {
+        console.error("Erro ao carregar contactos existentes:", error);
+
+        if (erroDeSessaoExpirada(error)) {
+          await supabase.auth.signOut();
+          limparContactosExistentes();
+          mostrarLogin("Sessão expirada. Volte a iniciar sessão.", true);
+        }
+      }
+    }
+
+    function limparContactosExistentes() {
+      const datalist = document.getElementById("contactosExistentes");
+      datalist.innerHTML = "";
     }
 
     function limparPesquisa() {
-      elements.searchTerm.value = "";
-      limparMensagem(elements.searchMessage);
-      limparTabela(elements.associadosBody);
-      adicionarLinhaVazia(elements.associadosBody, 4, "Faz uma pesquisa para ver resultados.");
+      document.getElementById("numeroSocio").value = "";
+      document.getElementById("nomeCompleto").value = "";
+      document.getElementById("regiao").value = "";
+      document.getElementById("contacto").value = "";
+
+      limparResultados();
+
+      message.textContent = "";
+      message.className = "message";
     }
 
-    async function carregarManifestos() {
-      limparMensagem(elements.manifestosMessage);
-      elements.debugBox.textContent = "";
+    function limparResultados() {
+      resultBody.innerHTML = "";
+      resultTable.classList.add("hidden");
+    }
 
-      const candidatura = elements.candidaturaInput.value.trim() || DEFAULT_CANDIDATURA;
+    function preencherDropdown(id, valores, textoInicial) {
+      const select = document.getElementById(id);
+      select.innerHTML = "";
 
-      setLoading(elements.loadManifestosButton, true, "A carregar...");
+      const optionInicial = document.createElement("option");
+      optionInicial.value = "";
+      optionInicial.textContent = textoInicial;
+      select.appendChild(optionInicial);
 
+      valores.forEach(valor => {
+        const option = document.createElement("option");
+        option.value = valor;
+        option.textContent = valor;
+        select.appendChild(option);
+      });
+    }
+
+    function mostrarApp(email) {
+      loginArea.classList.add("hidden");
+      appArea.classList.remove("hidden");
+      userInfo.textContent = `Sessão iniciada: ${email}`;
+
+      carregarContactosExistentes();
+
+      /*
+        Importante:
+        Os manifestos NÃO são carregados aqui automaticamente.
+        Só serão carregados quando clicar em Pendente, Enviado ou Recebido.
+      */
+      limparManifestos();
+    }
+
+    function mostrarLogin(textoErro = "", erro = false) {
+      appArea.classList.add("hidden");
+      loginArea.classList.remove("hidden");
+      userInfo.textContent = "";
+
+      if (textoErro) {
+        mostrarMensagem(loginMessage, textoErro, erro);
+      } else {
+        loginMessage.textContent = "";
+        loginMessage.className = "message";
+      }
+    }
+
+    function mostrarMensagem(elemento, texto, erro = false, sucesso = false) {
+      elemento.textContent = texto;
+      elemento.className = "message";
+
+      if (erro) {
+        elemento.classList.add("error");
+      }
+
+      if (sucesso) {
+        elemento.classList.add("success");
+      }
+    }
+
+    async function carregarManifestosPorEstado(estado) {
       try {
-        const { data, error } = await supabaseClient.rpc("listar_estado_manifestos", {
+        await obterSessaoValida();
+
+        estadoManifestosAtual = estado;
+        manifestosAtuais = [];
+
+        manifestosBody.innerHTML = "";
+        manifestosSummary.innerHTML = "";
+        manifestosTable.classList.add("hidden");
+
+        const candidatura = document.getElementById("candidaturaInput").value.trim() || "candidatura-2025";
+
+        mostrarMensagem(manifestosMessage, `A carregar manifestos com estado "${estado}"...`, false);
+
+        const { data, error } = await supabase.rpc("listar_estado_manifestos", {
           p_candidatura: candidatura
         });
 
         if (error) {
-          console.error("Erro ao carregar manifestos:", error);
+          throw error;
+        }
 
-          currentManifestos = [];
-          renderizarManifestos();
+        const lista = Array.isArray(data) ? data : [];
 
-          mostrarErro(
-            elements.manifestosMessage,
-            "Erro ao carregar manifestos via RPC 'listar_estado_manifestos'.\n" +
-            "Confirma se a função existe no Supabase e se tens permissões para a executar.\n\n" +
-            "Mensagem: " + error.message
-          );
+        manifestosAtuais = lista.filter(item => item.estado === estado);
 
-          escreverDiagnostico({
-            erro: error,
-            candidatura: candidatura,
-            rpc: "listar_estado_manifestos"
-          });
-
+        if (manifestosAtuais.length === 0) {
+          mostrarMensagem(manifestosMessage, `Não existem manifestos com estado "${estado}".`, false);
+          atualizarResumoManifestos([]);
           return;
         }
 
-        currentManifestos = Array.isArray(data) ? data : [];
-        renderizarManifestos();
-        atualizarResumo(currentManifestos);
+        manifestosAtuais.forEach(criarLinhaManifesto);
 
-        mostrarSucesso(
-          elements.manifestosMessage,
-          currentManifestos.length + " manifesto(s) carregado(s)."
+        manifestosTable.classList.remove("hidden");
+        atualizarResumoManifestos(manifestosAtuais);
+
+        mostrarMensagem(
+          manifestosMessage,
+          `${manifestosAtuais.length} manifesto(s) com estado "${estado}" encontrado(s).`,
+          false,
+          true
         );
+      } catch (error) {
+        console.error("Erro ao carregar manifestos:", error);
 
-        escreverDiagnostico({
-          candidatura: candidatura,
-          total: currentManifestos.length,
-          exemplo: currentManifestos[0] || null
-        });
+        const erroTratado = await tratarErroSessao(error, manifestosMessage);
 
-      } catch (err) {
-        console.error(err);
-
-        currentManifestos = [];
-        renderizarManifestos();
-
-        mostrarErro(
-          elements.manifestosMessage,
-          "Erro inesperado ao carregar manifestos: " + mensagemErro(err)
-        );
-
-        escreverDiagnostico({
-          erro: mensagemErro(err)
-        });
-
-      } finally {
-        setLoading(elements.loadManifestosButton, false, "Carregar manifestos");
-      }
-    }
-
-    function renderizarManifestos() {
-      limparTabela(elements.manifestosBody);
-
-      const filtroEstado = elements.estadoFiltro.value;
-
-      const listaFiltrada = currentManifestos.filter(function (item) {
-        if (!filtroEstado) return true;
-        return item.estado === filtroEstado;
-      });
-
-      if (!listaFiltrada || listaFiltrada.length === 0) {
-        adicionarLinhaVazia(elements.manifestosBody, 6, "Sem manifestos para mostrar.");
-        atualizarResumo(currentManifestos);
-        return;
-      }
-
-      listaFiltrada.forEach(function (item) {
-        const tr = document.createElement("tr");
-
-        adicionarCelula(tr, item.numero_socio || "");
-        adicionarCelula(tr, item.nome_completo || "");
-
-        const estadoTd = document.createElement("td");
-        const pill = document.createElement("span");
-        const estado = item.estado || "desconhecido";
-        pill.textContent = estado;
-        pill.className = "status-pill estado-" + estado;
-        estadoTd.appendChild(pill);
-        tr.appendChild(estadoTd);
-
-        adicionarCelula(tr, item.pdf_assinado_path ? "Disponível" : "—");
-        adicionarCelula(tr, formatarData(item.atualizado_em || item.recebido_em || item.enviado_em));
-
-        const actionsTd = document.createElement("td");
-        const actionsDiv = document.createElement("div");
-        actionsDiv.className = "row-actions";
-
-        const copyButton = document.createElement("button");
-        copyButton.type = "button";
-        copyButton.textContent = "Copiar link";
-        copyButton.addEventListener("click", function () {
-          copiarLink(item.token);
-        });
-        actionsDiv.appendChild(copyButton);
-
-        const downloadButton = document.createElement("button");
-        downloadButton.type = "button";
-        downloadButton.className = "success-button";
-        downloadButton.textContent = "Baixar PDF";
-        downloadButton.disabled = !item.pdf_assinado_path;
-        downloadButton.addEventListener("click", function () {
-          descarregarPDF(item.pdf_assinado_path);
-        });
-        actionsDiv.appendChild(downloadButton);
-
-        actionsTd.appendChild(actionsDiv);
-        tr.appendChild(actionsTd);
-
-        elements.manifestosBody.appendChild(tr);
-      });
-
-      atualizarResumo(currentManifestos);
-    }
-
-    function atualizarResumo(lista) {
-      elements.manifestosSummary.innerHTML = "";
-
-      const contagens = {
-        total: lista.length,
-        pendente: 0,
-        enviado: 0,
-        recebido: 0,
-        invalidado: 0
-      };
-
-      lista.forEach(function (item) {
-        if (item.estado && Object.prototype.hasOwnProperty.call(contagens, item.estado)) {
-          contagens[item.estado]++;
+        if (!erroTratado) {
+          mostrarMensagem(
+            manifestosMessage,
+            error.message || "Erro ao carregar manifestos.",
+            true
+          );
         }
-      });
-
-      adicionarResumo("Total", contagens.total);
-      adicionarResumo("Pendente", contagens.pendente);
-      adicionarResumo("Enviado", contagens.enviado);
-      adicionarResumo("Recebido", contagens.recebido);
-      adicionarResumo("Invalidado", contagens.invalidado);
+      }
     }
 
-    function adicionarResumo(label, valor) {
+    function criarLinhaManifesto(item) {
+      const tr = document.createElement("tr");
+
+      const tdNumero = document.createElement("td");
+      tdNumero.textContent = item.numero_socio ?? "";
+
+      const tdNome = document.createElement("td");
+      tdNome.textContent = item.nome_completo ?? "";
+
+      const tdEstado = document.createElement("td");
+      const pill = document.createElement("span");
+      pill.className = `status-pill estado-${item.estado || ""}`;
+      pill.textContent = item.estado ?? "";
+      tdEstado.appendChild(pill);
+
+      const tdPdf = document.createElement("td");
+      tdPdf.textContent = item.pdf_assinado_path ? "Disponível" : "—";
+
+      const tdAtualizado = document.createElement("td");
+      tdAtualizado.textContent = formatarData(
+        item.atualizado_em || item.recebido_em || item.enviado_em || item.criado_em
+      );
+
+      const tdAcoes = document.createElement("td");
+      const divAcoes = document.createElement("div");
+      divAcoes.className = "row-actions";
+
+      const copiarBtn = document.createElement("button");
+      copiarBtn.type = "button";
+      copiarBtn.textContent = "Copiar link";
+      copiarBtn.addEventListener("click", () => copiarLinkUpload(item.token));
+
+      const downloadBtn = document.createElement("button");
+      downloadBtn.type = "button";
+      downloadBtn.textContent = "Baixar PDF";
+      downloadBtn.className = "success-button";
+      downloadBtn.disabled = !item.pdf_assinado_path;
+      downloadBtn.addEventListener("click", () => descarregarPDFManifesto(item.pdf_assinado_path));
+
+      divAcoes.appendChild(copiarBtn);
+      divAcoes.appendChild(downloadBtn);
+
+      tdAcoes.appendChild(divAcoes);
+
+      tr.appendChild(tdNumero);
+      tr.appendChild(tdNome);
+      tr.appendChild(tdEstado);
+      tr.appendChild(tdPdf);
+      tr.appendChild(tdAtualizado);
+      tr.appendChild(tdAcoes);
+
+      manifestosBody.appendChild(tr);
+    }
+
+    function atualizarResumoManifestos(lista) {
+      manifestosSummary.innerHTML = "";
+
       const span = document.createElement("span");
-      span.textContent = label + ": " + valor;
-      elements.manifestosSummary.appendChild(span);
+
+      if (!estadoManifestosAtual) {
+        span.textContent = "Nenhum filtro selecionado";
+      } else {
+        span.textContent = `${estadoManifestosAtual}: ${lista.length}`;
+      }
+
+      manifestosSummary.appendChild(span);
     }
 
-    async function copiarLink(token) {
+    function limparManifestos() {
+      manifestosAtuais = [];
+      estadoManifestosAtual = "";
+      manifestosBody.innerHTML = "";
+      manifestosSummary.innerHTML = "";
+      manifestosTable.classList.add("hidden");
+      manifestosMessage.textContent = "Escolha Pendente, Enviado ou Recebido para consultar.";
+      manifestosMessage.className = "message";
+    }
+
+    async function copiarLinkUpload(token) {
       if (!token) {
-        mostrarErro(elements.manifestosMessage, "Este manifesto não tem token.");
+        mostrarMensagem(manifestosMessage, "Este manifesto não tem token.", true);
         return;
       }
 
@@ -918,216 +1071,7 @@
 
       try {
         await navigator.clipboard.writeText(link);
-        mostrarSucesso(elements.manifestosMessage, "Link copiado:\n" + link);
-      } catch (err) {
-        console.error(err);
-        mostrarErro(
-          elements.manifestosMessage,
-          "Não foi possível copiar automaticamente. Copia manualmente:\n" + link
-        );
-      }
-    }
-
-    async function descarregarPDF(path) {
-      limparMensagem(elements.manifestosMessage);
-
-      if (!path) {
-        mostrarErro(elements.manifestosMessage, "Este manifesto ainda não tem PDF associado.");
-        return;
-      }
-
-      try {
-        const { data, error } = await supabaseClient
-          .storage
-          .from(BUCKET_MANIFESTOS)
-          .createSignedUrl(path, 60);
-
-        if (error) {
-          console.error("Erro ao criar signed URL:", error);
-          mostrarErro(
-            elements.manifestosMessage,
-            "Erro ao preparar download. Confirma as políticas do Storage para o bucket privado."
-          );
-          return;
-        }
-
-        if (!data || !data.signedUrl) {
-          mostrarErro(elements.manifestosMessage, "Não foi possível gerar o link de download.");
-          return;
-        }
-
-        window.open(data.signedUrl, "_blank", "noopener,noreferrer");
-
-      } catch (err) {
-        console.error(err);
-        mostrarErro(elements.manifestosMessage, "Erro inesperado ao descarregar PDF: " + mensagemErro(err));
-      }
-    }
-
-    function exportarCSV() {
-      if (!currentManifestos || currentManifestos.length === 0) {
-        mostrarErro(elements.manifestosMessage, "Não há manifestos para exportar.");
-        return;
-      }
-
-      const linhas = [];
-      const cabecalho = [
-        "numero_socio",
-        "nome_completo",
-        "estado",
-        "token",
-        "pdf_assinado_path",
-        "enviado_em",
-        "recebido_em",
-        "atualizado_em"
-      ];
-
-      linhas.push(cabecalho.join(";"));
-
-      currentManifestos.forEach(function (item) {
-        const linha = cabecalho.map(function (campo) {
-          return valorCSV(item[campo]);
-        });
-
-        linhas.push(linha.join(";"));
-      });
-
-      const csv = linhas.join("\n");
-      const blob = new Blob(["\uFEFF" + csv], {
-        type: "text/csv;charset=utf-8;"
-      });
-
-      const candidatura = elements.candidaturaInput.value.trim() || DEFAULT_CANDIDATURA;
-      const nomeFicheiro = "manifestos-" + candidatura + ".csv";
-
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = nomeFicheiro;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      mostrarSucesso(elements.manifestosMessage, "CSV exportado.");
-    }
-
-    function valorCSV(valor) {
-      if (valor === null || valor === undefined) {
-        return "";
-      }
-
-      const texto = String(valor).replace(/"/g, '""');
-      return '"' + texto + '"';
-    }
-
-    function alternarDiagnostico() {
-      elements.debugBox.classList.toggle("visible");
-
-      if (elements.debugBox.classList.contains("visible")) {
-        elements.toggleDebugButton.textContent = "Esconder diagnóstico";
-      } else {
-        elements.toggleDebugButton.textContent = "Mostrar diagnóstico";
-      }
-    }
-
-    function escreverDiagnostico(objeto) {
-      try {
-        elements.debugBox.textContent = JSON.stringify(objeto, null, 2);
-      } catch (err) {
-        elements.debugBox.textContent = String(objeto);
-      }
-    }
-
-    function formatarData(valor) {
-      if (!valor) {
-        return "—";
-      }
-
-      try {
-        const data = new Date(valor);
-
-        if (Number.isNaN(data.getTime())) {
-          return valor;
-        }
-
-        return data.toLocaleString("pt-PT");
-      } catch (err) {
-        return valor;
-      }
-    }
-
-    function limparTabela(tbody) {
-      while (tbody.firstChild) {
-        tbody.removeChild(tbody.firstChild);
-      }
-    }
-
-    function adicionarLinhaVazia(tbody, colspan, texto) {
-      const tr = document.createElement("tr");
-      const td = document.createElement("td");
-
-      td.colSpan = colspan;
-      td.className = "muted";
-      td.textContent = texto;
-
-      tr.appendChild(td);
-      tbody.appendChild(tr);
-    }
-
-    function adicionarCelula(tr, texto) {
-      const td = document.createElement("td");
-      td.textContent = texto === null || texto === undefined ? "" : String(texto);
-      tr.appendChild(td);
-    }
-
-    function mostrar(elemento) {
-      elemento.classList.remove("hidden");
-    }
-
-    function esconder(elemento) {
-      elemento.classList.add("hidden");
-    }
-
-    function limparMensagem(elemento) {
-      elemento.textContent = "";
-      elemento.className = "message";
-    }
-
-    function mostrarErro(elemento, texto) {
-      elemento.textContent = texto;
-      elemento.className = "message error";
-    }
-
-    function mostrarSucesso(elemento, texto) {
-      elemento.textContent = texto;
-      elemento.className = "message success";
-    }
-
-    function setLoading(botao, loading, texto) {
-      botao.disabled = loading;
-      botao.textContent = texto;
-    }
-
-    function mensagemErro(err) {
-      if (!err) {
-        return "Erro desconhecido";
-      }
-
-      if (typeof err === "string") {
-        return err;
-      }
-
-      if (err.message) {
-        return err.message;
-      }
-
-      try {
-        return JSON.stringify(err);
-      } catch (_) {
-        return String(err);
-      }
-    }
-  </script>
-</body>
-</html>
+        mostrarMensagem(manifestosMessage, "Link copiado:\n" + link, false, true);
+      } catch (error) {
+        console.error("Erro ao copiar link:", error);
+        mostrarMensagem(manifestosMessage, "Não
