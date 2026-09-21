@@ -30,6 +30,11 @@
       font-size: 24px;
     }
 
+    h2 {
+      margin-top: 0;
+      color: #003f7f;
+    }
+
     .card {
       background: white;
       padding: 20px;
@@ -42,6 +47,31 @@
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 14px;
+    }
+
+    @media (max-width: 900px) {
+      .grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .actions {
+        flex-direction: column;
+      }
+
+      .actions button {
+        width: 100%;
+      }
     }
 
     label {
@@ -73,6 +103,11 @@
       background: #004494;
     }
 
+    button:disabled {
+      background: #999;
+      cursor: not-allowed;
+    }
+
     button.secondary {
       background: #555;
     }
@@ -95,6 +130,14 @@
 
     button.warning-button:hover {
       background: #92400e;
+    }
+
+    button.danger-button {
+      background: #b00020;
+    }
+
+    button.danger-button:hover {
+      background: #8c0019;
     }
 
     .actions {
@@ -124,14 +167,22 @@
     .message {
       margin-top: 12px;
       color: #444;
+      white-space: pre-wrap;
     }
 
     .error {
       color: #b00020;
+      font-weight: bold;
     }
 
     .success {
       color: #0a7a2f;
+      font-weight: bold;
+    }
+
+    .muted {
+      color: #666;
+      font-size: 14px;
     }
 
     table {
@@ -157,7 +208,7 @@
     }
 
     .hidden {
-      display: none;
+      display: none !important;
     }
 
     .topbar {
@@ -169,7 +220,8 @@
 
     .user-info {
       font-size: 14px;
-      opacity: 0.9;
+      opacity: 0.95;
+      text-align: right;
     }
 
     .summary {
@@ -183,4 +235,899 @@
       background: #f3f4f6;
       border: 1px solid #ddd;
       padding: 8px 12px;
-      border
+      border-radius: 999px;
+    }
+
+    .status-pill {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-weight: bold;
+      font-size: 13px;
+    }
+
+    .estado-pendente {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .estado-enviado {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .estado-recebido {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .estado-invalidado {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+    }
+
+    .debug-box {
+      background: #111827;
+      color: #f9fafb;
+      padding: 12px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 13px;
+      display: none;
+    }
+
+    .debug-box.visible {
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="topbar">
+      <div>
+        <h1>Consulta de Associados</h1>
+        <div class="muted" style="color: rgba(255,255,255,0.85);">
+          Gestão de associados e manifestos assinados
+        </div>
+      </div>
+
+      <div class="user-info">
+        <div id="userInfo">A verificar sessão...</div>
+        <button id="logoutButton" class="secondary hidden" type="button" style="margin-top: 8px;">
+          Terminar sessão
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="configWarning" class="card hidden">
+      <h2>Configuração em falta</h2>
+      <p class="error">
+        Tens de configurar o SUPABASE_URL e o SUPABASE_ANON_KEY no ficheiro index.html.
+      </p>
+    </section>
+
+    <section id="loginSection" class="card hidden">
+      <h2>Entrar</h2>
+
+      <div class="grid">
+        <div>
+          <label for="emailInput">Email</label>
+          <input id="emailInput" type="email" autocomplete="email" placeholder="email@exemplo.pt" />
+        </div>
+
+        <div>
+          <label for="passwordInput">Password</label>
+          <input id="passwordInput" type="password" autocomplete="current-password" placeholder="Password" />
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="loginButton" type="button">Entrar</button>
+      </div>
+
+      <div id="loginMessage" class="message"></div>
+    </section>
+
+    <section id="appSection" class="hidden">
+      <section class="card">
+        <h2>Pesquisa de associados</h2>
+
+        <p class="muted">
+          Esta pesquisa usa uma tabela chamada <strong>associados</strong>. Se a tua tabela tiver outro nome ou outros campos,
+          ajusta a função <code>pesquisarAssociados()</code> no JavaScript.
+        </p>
+
+        <div class="grid">
+          <div>
+            <label for="searchTerm">Pesquisar</label>
+            <input id="searchTerm" type="text" placeholder="Número, nome ou email" />
+          </div>
+
+          <div>
+            <label for="searchField">Campo</label>
+            <select id="searchField">
+              <option value="geral">Pesquisa geral</option>
+              <option value="numero_socio">Número de sócio</option>
+              <option value="nome_completo">Nome</option>
+              <option value="email">Email</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="limitInput">Limite</label>
+            <select id="limitInput">
+              <option value="25">25 resultados</option>
+              <option value="50">50 resultados</option>
+              <option value="100">100 resultados</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="searchButton" type="button">Pesquisar</button>
+          <button id="clearSearchButton" class="secondary" type="button">Limpar</button>
+        </div>
+
+        <div id="searchMessage" class="message"></div>
+
+        <div class="table-wrapper" style="margin-top: 16px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Número</th>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>Telefone</th>
+              </tr>
+            </thead>
+            <tbody id="associadosBody">
+              <tr>
+                <td colspan="4" class="muted">Faz uma pesquisa para ver resultados.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Estado dos manifestos</h2>
+
+        <div class="grid">
+          <div>
+            <label for="candidaturaInput">Candidatura</label>
+            <input id="candidaturaInput" type="text" value="candidatura-2025" />
+          </div>
+
+          <div>
+            <label for="estadoFiltro">Filtrar por estado</label>
+            <select id="estadoFiltro">
+              <option value="">Todos</option>
+              <option value="pendente">Pendente</option>
+              <option value="enviado">Enviado</option>
+              <option value="recebido">Recebido</option>
+              <option value="invalidado">Invalidado</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="loadManifestosButton" type="button">Carregar manifestos</button>
+          <button id="exportCsvButton" class="success-button" type="button">Exportar CSV</button>
+          <button id="toggleDebugButton" class="secondary" type="button">Mostrar diagnóstico</button>
+        </div>
+
+        <div id="manifestosMessage" class="message"></div>
+
+        <div id="manifestosSummary" class="summary"></div>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Número</th>
+                <th>Nome</th>
+                <th>Estado</th>
+                <th>PDF</th>
+                <th>Atualizado</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="manifestosBody">
+              <tr>
+                <td colspan="6" class="muted">Carrega os manifestos para ver resultados.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <pre id="debugBox" class="debug-box"></pre>
+      </section>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script>
+    "use strict";
+
+    /*
+      CONFIGURAÇÃO OBRIGATÓRIA
+      Substitui estes dois valores pelos dados reais do teu projeto Supabase.
+    */
+    const SUPABASE_URL = "https://TEU-PROJETO.supabase.co";
+    const SUPABASE_ANON_KEY = "TUA_ANON_KEY";
+
+    /*
+      CONFIGURAÇÃO DO SISTEMA
+    */
+    const BUCKET_MANIFESTOS = "manifestos-assinados";
+    const DEFAULT_CANDIDATURA = "candidatura-2025";
+    const UPLOAD_PAGE = "upload.html";
+
+    /*
+      Se a tabela dos associados tiver outro nome, altera aqui.
+    */
+    const ASSOCIADOS_TABLE = "associados";
+
+    let supabaseClient = null;
+    let currentManifestos = [];
+
+    const elements = {};
+
+    document.addEventListener("DOMContentLoaded", iniciarPagina);
+
+    async function iniciarPagina() {
+      guardarElementos();
+      ligarEventos();
+
+      if (!configuracaoValida()) {
+        mostrar(elements.configWarning);
+        esconder(elements.loginSection);
+        esconder(elements.appSection);
+        return;
+      }
+
+      try {
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      } catch (err) {
+        mostrarErro(elements.loginMessage, "Erro ao criar cliente Supabase: " + mensagemErro(err));
+        console.error(err);
+        return;
+      }
+
+      await verificarSessao();
+    }
+
+    function guardarElementos() {
+      elements.configWarning = document.getElementById("configWarning");
+      elements.loginSection = document.getElementById("loginSection");
+      elements.appSection = document.getElementById("appSection");
+
+      elements.userInfo = document.getElementById("userInfo");
+      elements.logoutButton = document.getElementById("logoutButton");
+
+      elements.emailInput = document.getElementById("emailInput");
+      elements.passwordInput = document.getElementById("passwordInput");
+      elements.loginButton = document.getElementById("loginButton");
+      elements.loginMessage = document.getElementById("loginMessage");
+
+      elements.searchTerm = document.getElementById("searchTerm");
+      elements.searchField = document.getElementById("searchField");
+      elements.limitInput = document.getElementById("limitInput");
+      elements.searchButton = document.getElementById("searchButton");
+      elements.clearSearchButton = document.getElementById("clearSearchButton");
+      elements.searchMessage = document.getElementById("searchMessage");
+      elements.associadosBody = document.getElementById("associadosBody");
+
+      elements.candidaturaInput = document.getElementById("candidaturaInput");
+      elements.estadoFiltro = document.getElementById("estadoFiltro");
+      elements.loadManifestosButton = document.getElementById("loadManifestosButton");
+      elements.exportCsvButton = document.getElementById("exportCsvButton");
+      elements.toggleDebugButton = document.getElementById("toggleDebugButton");
+      elements.manifestosMessage = document.getElementById("manifestosMessage");
+      elements.manifestosSummary = document.getElementById("manifestosSummary");
+      elements.manifestosBody = document.getElementById("manifestosBody");
+      elements.debugBox = document.getElementById("debugBox");
+    }
+
+    function ligarEventos() {
+      elements.loginButton.addEventListener("click", fazerLogin);
+      elements.logoutButton.addEventListener("click", fazerLogout);
+
+      elements.searchButton.addEventListener("click", pesquisarAssociados);
+      elements.clearSearchButton.addEventListener("click", limparPesquisa);
+
+      elements.searchTerm.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+          pesquisarAssociados();
+        }
+      });
+
+      elements.loadManifestosButton.addEventListener("click", carregarManifestos);
+      elements.estadoFiltro.addEventListener("change", renderizarManifestos);
+      elements.exportCsvButton.addEventListener("click", exportarCSV);
+      elements.toggleDebugButton.addEventListener("click", alternarDiagnostico);
+    }
+
+    function configuracaoValida() {
+      const urlOk = SUPABASE_URL &&
+        SUPABASE_URL.includes("supabase.co") &&
+        !SUPABASE_URL.includes("TEU-PROJETO");
+
+      const keyOk = SUPABASE_ANON_KEY &&
+        SUPABASE_ANON_KEY.length > 20 &&
+        !SUPABASE_ANON_KEY.includes("TUA_ANON_KEY");
+
+      return urlOk && keyOk;
+    }
+
+    async function verificarSessao() {
+      try {
+        const { data, error } = await supabaseClient.auth.getSession();
+
+        if (error) {
+          console.error("Erro ao verificar sessão:", error);
+          mostrarLogin();
+          return;
+        }
+
+        const session = data && data.session ? data.session : null;
+
+        if (session && session.user) {
+          mostrarApp(session.user);
+          await carregarManifestos();
+        } else {
+          mostrarLogin();
+        }
+      } catch (err) {
+        console.error(err);
+        mostrarLogin();
+      }
+    }
+
+    function mostrarLogin() {
+      elements.userInfo.textContent = "Sessão não iniciada";
+      mostrar(elements.loginSection);
+      esconder(elements.appSection);
+      esconder(elements.logoutButton);
+    }
+
+    function mostrarApp(user) {
+      elements.userInfo.textContent = user && user.email ? user.email : "Sessão iniciada";
+      esconder(elements.loginSection);
+      mostrar(elements.appSection);
+      mostrar(elements.logoutButton);
+    }
+
+    async function fazerLogin() {
+      limparMensagem(elements.loginMessage);
+
+      const email = elements.emailInput.value.trim();
+      const password = elements.passwordInput.value;
+
+      if (!email || !password) {
+        mostrarErro(elements.loginMessage, "Indica o email e a password.");
+        return;
+      }
+
+      setLoading(elements.loginButton, true, "A entrar...");
+
+      try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+          email,
+          password
+        });
+
+        if (error) {
+          mostrarErro(elements.loginMessage, "Erro ao entrar: " + error.message);
+          return;
+        }
+
+        if (!data || !data.user) {
+          mostrarErro(elements.loginMessage, "Não foi possível iniciar sessão.");
+          return;
+        }
+
+        mostrarSucesso(elements.loginMessage, "Sessão iniciada.");
+        mostrarApp(data.user);
+        await carregarManifestos();
+
+      } catch (err) {
+        console.error(err);
+        mostrarErro(elements.loginMessage, "Erro inesperado ao iniciar sessão: " + mensagemErro(err));
+      } finally {
+        setLoading(elements.loginButton, false, "Entrar");
+      }
+    }
+
+    async function fazerLogout() {
+      try {
+        await supabaseClient.auth.signOut();
+      } catch (err) {
+        console.error(err);
+      }
+
+      currentManifestos = [];
+      mostrarLogin();
+    }
+
+    async function pesquisarAssociados() {
+      limparMensagem(elements.searchMessage);
+
+      const termo = elements.searchTerm.value.trim();
+      const campo = elements.searchField.value;
+      const limite = parseInt(elements.limitInput.value, 10) || 25;
+
+      if (!termo) {
+        mostrarErro(elements.searchMessage, "Escreve um termo de pesquisa.");
+        return;
+      }
+
+      setLoading(elements.searchButton, true, "A pesquisar...");
+
+      try {
+        let query = supabaseClient
+          .from(ASSOCIADOS_TABLE)
+          .select("id, numero_socio, nome_completo, email, telefone")
+          .limit(limite);
+
+        if (campo === "numero_socio") {
+          query = query.ilike("numero_socio", "%" + termo + "%");
+        } else if (campo === "nome_completo") {
+          query = query.ilike("nome_completo", "%" + termo + "%");
+        } else if (campo === "email") {
+          query = query.ilike("email", "%" + termo + "%");
+        } else {
+          query = query.or(
+            "numero_socio.ilike.%" + termo + "%," +
+            "nome_completo.ilike.%" + termo + "%," +
+            "email.ilike.%" + termo + "%"
+          );
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+          console.error("Erro na pesquisa:", error);
+          mostrarErro(
+            elements.searchMessage,
+            "Erro na pesquisa. Confirma se a tabela '" + ASSOCIADOS_TABLE + "' e os campos existem."
+          );
+          renderizarAssociados([]);
+          return;
+        }
+
+        renderizarAssociados(data || []);
+        mostrarSucesso(elements.searchMessage, (data || []).length + " resultado(s) encontrado(s).");
+
+      } catch (err) {
+        console.error(err);
+        mostrarErro(elements.searchMessage, "Erro inesperado na pesquisa: " + mensagemErro(err));
+        renderizarAssociados([]);
+      } finally {
+        setLoading(elements.searchButton, false, "Pesquisar");
+      }
+    }
+
+    function renderizarAssociados(lista) {
+      limparTabela(elements.associadosBody);
+
+      if (!lista || lista.length === 0) {
+        adicionarLinhaVazia(elements.associadosBody, 4, "Sem resultados.");
+        return;
+      }
+
+      lista.forEach(function (item) {
+        const tr = document.createElement("tr");
+
+        adicionarCelula(tr, item.numero_socio || "");
+        adicionarCelula(tr, item.nome_completo || "");
+        adicionarCelula(tr, item.email || "");
+        adicionarCelula(tr, item.telefone || "");
+
+        elements.associadosBody.appendChild(tr);
+      });
+    }
+
+    function limparPesquisa() {
+      elements.searchTerm.value = "";
+      limparMensagem(elements.searchMessage);
+      limparTabela(elements.associadosBody);
+      adicionarLinhaVazia(elements.associadosBody, 4, "Faz uma pesquisa para ver resultados.");
+    }
+
+    async function carregarManifestos() {
+      limparMensagem(elements.manifestosMessage);
+      elements.debugBox.textContent = "";
+
+      const candidatura = elements.candidaturaInput.value.trim() || DEFAULT_CANDIDATURA;
+
+      setLoading(elements.loadManifestosButton, true, "A carregar...");
+
+      try {
+        const { data, error } = await supabaseClient.rpc("listar_estado_manifestos", {
+          p_candidatura: candidatura
+        });
+
+        if (error) {
+          console.error("Erro ao carregar manifestos:", error);
+
+          currentManifestos = [];
+          renderizarManifestos();
+
+          mostrarErro(
+            elements.manifestosMessage,
+            "Erro ao carregar manifestos via RPC 'listar_estado_manifestos'.\n" +
+            "Confirma se a função existe no Supabase e se tens permissões para a executar.\n\n" +
+            "Mensagem: " + error.message
+          );
+
+          escreverDiagnostico({
+            erro: error,
+            candidatura: candidatura,
+            rpc: "listar_estado_manifestos"
+          });
+
+          return;
+        }
+
+        currentManifestos = Array.isArray(data) ? data : [];
+        renderizarManifestos();
+        atualizarResumo(currentManifestos);
+
+        mostrarSucesso(
+          elements.manifestosMessage,
+          currentManifestos.length + " manifesto(s) carregado(s)."
+        );
+
+        escreverDiagnostico({
+          candidatura: candidatura,
+          total: currentManifestos.length,
+          exemplo: currentManifestos[0] || null
+        });
+
+      } catch (err) {
+        console.error(err);
+
+        currentManifestos = [];
+        renderizarManifestos();
+
+        mostrarErro(
+          elements.manifestosMessage,
+          "Erro inesperado ao carregar manifestos: " + mensagemErro(err)
+        );
+
+        escreverDiagnostico({
+          erro: mensagemErro(err)
+        });
+
+      } finally {
+        setLoading(elements.loadManifestosButton, false, "Carregar manifestos");
+      }
+    }
+
+    function renderizarManifestos() {
+      limparTabela(elements.manifestosBody);
+
+      const filtroEstado = elements.estadoFiltro.value;
+
+      const listaFiltrada = currentManifestos.filter(function (item) {
+        if (!filtroEstado) return true;
+        return item.estado === filtroEstado;
+      });
+
+      if (!listaFiltrada || listaFiltrada.length === 0) {
+        adicionarLinhaVazia(elements.manifestosBody, 6, "Sem manifestos para mostrar.");
+        atualizarResumo(currentManifestos);
+        return;
+      }
+
+      listaFiltrada.forEach(function (item) {
+        const tr = document.createElement("tr");
+
+        adicionarCelula(tr, item.numero_socio || "");
+        adicionarCelula(tr, item.nome_completo || "");
+
+        const estadoTd = document.createElement("td");
+        const pill = document.createElement("span");
+        const estado = item.estado || "desconhecido";
+        pill.textContent = estado;
+        pill.className = "status-pill estado-" + estado;
+        estadoTd.appendChild(pill);
+        tr.appendChild(estadoTd);
+
+        adicionarCelula(tr, item.pdf_assinado_path ? "Disponível" : "—");
+        adicionarCelula(tr, formatarData(item.atualizado_em || item.recebido_em || item.enviado_em));
+
+        const actionsTd = document.createElement("td");
+        const actionsDiv = document.createElement("div");
+        actionsDiv.className = "row-actions";
+
+        const copyButton = document.createElement("button");
+        copyButton.type = "button";
+        copyButton.textContent = "Copiar link";
+        copyButton.addEventListener("click", function () {
+          copiarLink(item.token);
+        });
+        actionsDiv.appendChild(copyButton);
+
+        const downloadButton = document.createElement("button");
+        downloadButton.type = "button";
+        downloadButton.className = "success-button";
+        downloadButton.textContent = "Baixar PDF";
+        downloadButton.disabled = !item.pdf_assinado_path;
+        downloadButton.addEventListener("click", function () {
+          descarregarPDF(item.pdf_assinado_path);
+        });
+        actionsDiv.appendChild(downloadButton);
+
+        actionsTd.appendChild(actionsDiv);
+        tr.appendChild(actionsTd);
+
+        elements.manifestosBody.appendChild(tr);
+      });
+
+      atualizarResumo(currentManifestos);
+    }
+
+    function atualizarResumo(lista) {
+      elements.manifestosSummary.innerHTML = "";
+
+      const contagens = {
+        total: lista.length,
+        pendente: 0,
+        enviado: 0,
+        recebido: 0,
+        invalidado: 0
+      };
+
+      lista.forEach(function (item) {
+        if (item.estado && Object.prototype.hasOwnProperty.call(contagens, item.estado)) {
+          contagens[item.estado]++;
+        }
+      });
+
+      adicionarResumo("Total", contagens.total);
+      adicionarResumo("Pendente", contagens.pendente);
+      adicionarResumo("Enviado", contagens.enviado);
+      adicionarResumo("Recebido", contagens.recebido);
+      adicionarResumo("Invalidado", contagens.invalidado);
+    }
+
+    function adicionarResumo(label, valor) {
+      const span = document.createElement("span");
+      span.textContent = label + ": " + valor;
+      elements.manifestosSummary.appendChild(span);
+    }
+
+    async function copiarLink(token) {
+      if (!token) {
+        mostrarErro(elements.manifestosMessage, "Este manifesto não tem token.");
+        return;
+      }
+
+      const baseUrl = window.location.origin + window.location.pathname.replace(/index\.html$/i, "");
+      const link = baseUrl + UPLOAD_PAGE + "?token=" + encodeURIComponent(token);
+
+      try {
+        await navigator.clipboard.writeText(link);
+        mostrarSucesso(elements.manifestosMessage, "Link copiado:\n" + link);
+      } catch (err) {
+        console.error(err);
+        mostrarErro(
+          elements.manifestosMessage,
+          "Não foi possível copiar automaticamente. Copia manualmente:\n" + link
+        );
+      }
+    }
+
+    async function descarregarPDF(path) {
+      limparMensagem(elements.manifestosMessage);
+
+      if (!path) {
+        mostrarErro(elements.manifestosMessage, "Este manifesto ainda não tem PDF associado.");
+        return;
+      }
+
+      try {
+        const { data, error } = await supabaseClient
+          .storage
+          .from(BUCKET_MANIFESTOS)
+          .createSignedUrl(path, 60);
+
+        if (error) {
+          console.error("Erro ao criar signed URL:", error);
+          mostrarErro(
+            elements.manifestosMessage,
+            "Erro ao preparar download. Confirma as políticas do Storage para o bucket privado."
+          );
+          return;
+        }
+
+        if (!data || !data.signedUrl) {
+          mostrarErro(elements.manifestosMessage, "Não foi possível gerar o link de download.");
+          return;
+        }
+
+        window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+
+      } catch (err) {
+        console.error(err);
+        mostrarErro(elements.manifestosMessage, "Erro inesperado ao descarregar PDF: " + mensagemErro(err));
+      }
+    }
+
+    function exportarCSV() {
+      if (!currentManifestos || currentManifestos.length === 0) {
+        mostrarErro(elements.manifestosMessage, "Não há manifestos para exportar.");
+        return;
+      }
+
+      const linhas = [];
+      const cabecalho = [
+        "numero_socio",
+        "nome_completo",
+        "estado",
+        "token",
+        "pdf_assinado_path",
+        "enviado_em",
+        "recebido_em",
+        "atualizado_em"
+      ];
+
+      linhas.push(cabecalho.join(";"));
+
+      currentManifestos.forEach(function (item) {
+        const linha = cabecalho.map(function (campo) {
+          return valorCSV(item[campo]);
+        });
+
+        linhas.push(linha.join(";"));
+      });
+
+      const csv = linhas.join("\n");
+      const blob = new Blob(["\uFEFF" + csv], {
+        type: "text/csv;charset=utf-8;"
+      });
+
+      const candidatura = elements.candidaturaInput.value.trim() || DEFAULT_CANDIDATURA;
+      const nomeFicheiro = "manifestos-" + candidatura + ".csv";
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = nomeFicheiro;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      mostrarSucesso(elements.manifestosMessage, "CSV exportado.");
+    }
+
+    function valorCSV(valor) {
+      if (valor === null || valor === undefined) {
+        return "";
+      }
+
+      const texto = String(valor).replace(/"/g, '""');
+      return '"' + texto + '"';
+    }
+
+    function alternarDiagnostico() {
+      elements.debugBox.classList.toggle("visible");
+
+      if (elements.debugBox.classList.contains("visible")) {
+        elements.toggleDebugButton.textContent = "Esconder diagnóstico";
+      } else {
+        elements.toggleDebugButton.textContent = "Mostrar diagnóstico";
+      }
+    }
+
+    function escreverDiagnostico(objeto) {
+      try {
+        elements.debugBox.textContent = JSON.stringify(objeto, null, 2);
+      } catch (err) {
+        elements.debugBox.textContent = String(objeto);
+      }
+    }
+
+    function formatarData(valor) {
+      if (!valor) {
+        return "—";
+      }
+
+      try {
+        const data = new Date(valor);
+
+        if (Number.isNaN(data.getTime())) {
+          return valor;
+        }
+
+        return data.toLocaleString("pt-PT");
+      } catch (err) {
+        return valor;
+      }
+    }
+
+    function limparTabela(tbody) {
+      while (tbody.firstChild) {
+        tbody.removeChild(tbody.firstChild);
+      }
+    }
+
+    function adicionarLinhaVazia(tbody, colspan, texto) {
+      const tr = document.createElement("tr");
+      const td = document.createElement("td");
+
+      td.colSpan = colspan;
+      td.className = "muted";
+      td.textContent = texto;
+
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+    }
+
+    function adicionarCelula(tr, texto) {
+      const td = document.createElement("td");
+      td.textContent = texto === null || texto === undefined ? "" : String(texto);
+      tr.appendChild(td);
+    }
+
+    function mostrar(elemento) {
+      elemento.classList.remove("hidden");
+    }
+
+    function esconder(elemento) {
+      elemento.classList.add("hidden");
+    }
+
+    function limparMensagem(elemento) {
+      elemento.textContent = "";
+      elemento.className = "message";
+    }
+
+    function mostrarErro(elemento, texto) {
+      elemento.textContent = texto;
+      elemento.className = "message error";
+    }
+
+    function mostrarSucesso(elemento, texto) {
+      elemento.textContent = texto;
+      elemento.className = "message success";
+    }
+
+    function setLoading(botao, loading, texto) {
+      botao.disabled = loading;
+      botao.textContent = texto;
+    }
+
+    function mensagemErro(err) {
+      if (!err) {
+        return "Erro desconhecido";
+      }
+
+      if (typeof err === "string") {
+        return err;
+      }
+
+      if (err.message) {
+        return err.message;
+      }
+
+      try {
+        return JSON.stringify(err);
+      } catch (_) {
+        return String(err);
+      }
+    }
+  </script>
+</body>
+</html>
