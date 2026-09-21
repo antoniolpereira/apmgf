@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <title>Envio de manifesto assinado</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f3f4f6;
+      color: #222;
+    }
+
+    header {
+      background: #003f7f;
+      color: white;
+      padding: 20px;
+    }
+
+    main {
+      max-width: 640px;
+      margin: 30px auto;
+      padding: 0 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    input,
+    button {
+      width: 100%;
+      padding: 10px;
+      font-size: 15px;
+      box-sizing: border-box;
+      border-radius: 6px;
+      border: 1px solid #bbb;
+    }
+
+    button {
+      margin-top: 14px;
+      background: #0057b8;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: #004494;
+    }
+
+    button:disabled {
+      background: #999;
+      cursor: not-allowed;
+    }
+
+    .message {
+      margin-top: 12px;
+      color: #444;
+    }
+
+    .error {
+      color: #b00020;
+    }
+
+    .success {
+      color: #0a7a2f;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .note {
+      background: #eef2ff;
+      border-left: 4px solid #0057b8;
+      padding: 12px;
+      margin: 16px 0;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Envio de manifesto assinado</h1>
+  </header>
+
+  <main>
+    <section class="card">
+      <p>
+        Use esta página para enviar o manifesto de apoio depois de assinado.
+      </p>
+
+      <div class="note">
+        Só são aceites ficheiros PDF, com tamanho máximo de 10 MB.
+      </div>
+
+      <div id="statusMessage" class="message">
+        A validar o link...
+      </div>
+
+      <form id="uploadForm" class="hidden">
+        <label for="file">Selecionar PDF assinado</label>
+
+        <input
+          id="file"
+          name="file"
+          type="file"
+          accept="application/pdf,.pdf"
+          required
+        >
+
+        <button id="submitButton" type="submit">
+          Enviar PDF assinado
+        </button>
+      </form>
+    </section>
+  </main>
+
+  <script>
+    const FUNCTION_URL = "https://xyyyqplnioeiedxzjetm.supabase.co/functions/v1/upload-manifesto";
+    const MAX_SIZE_BYTES = 10 * 1024 * 1024;
+
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+
+    const statusMessage = document.getElementById("statusMessage");
+    const uploadForm = document.getElementById("uploadForm");
+    const fileInput = document.getElementById("file");
+    const submitButton = document.getElementById("submitButton");
+
+    function mostrarMensagem(texto, erro = false, sucesso = false) {
+      statusMessage.textContent = texto;
+      statusMessage.className = "message";
+
+      if (erro) {
+        statusMessage.classList.add("error");
+      }
+
+      if (sucesso) {
+        statusMessage.classList.add("success");
+      }
+    }
+
+    async function validarToken() {
+      if (!token) {
+        mostrarMensagem("Link inválido: token em falta.", true);
+        return;
+      }
+
+      try {
+        const response = await fetch(`${FUNCTION_URL}?token=${encodeURIComponent(token)}`);
+        const result = await response.json();
+
+        if (!response.ok) {
+          mostrarMensagem(result.error || "Link inválido ou expirado.", true);
+          return;
+        }
+
+        if (result.estado === "recebido") {
+          mostrarMensagem("Este manifesto já foi recebido. Obrigado.", false, true);
+          return;
+        }
+
+        uploadForm.classList.remove("hidden");
+        mostrarMensagem("Link válido. Pode selecionar o PDF assinado.");
+      } catch (error) {
+        console.error(error);
+        mostrarMensagem("Erro ao validar o link.", true);
+      }
+    }
+
+    uploadForm.addEventListener("submit", async function(event) {
+      event.preventDefault();
+
+      const file = fileInput.files[0];
+
+      if (!file) {
+        mostrarMensagem("Selecione um ficheiro PDF.", true);
+        return;
+      }
+
+      if (file.size > MAX_SIZE_BYTES) {
+        mostrarMensagem("O ficheiro excede o limite de 10 MB.", true);
+        return;
+      }
+
+      const nome = file.name.toLowerCase();
+
+      if (!nome.endsWith(".pdf")) {
+        mostrarMensagem("Só são aceites ficheiros PDF.", true);
+        return;
+      }
+
+      submitButton.disabled = true;
+      submitButton.textContent = "A enviar...";
+      mostrarMensagem("A enviar PDF...");
+
+      try {
+        const formData = new FormData();
+        formData.append("token", token);
+        formData.append("file", file);
+
+        const response = await fetch(FUNCTION_URL, {
+          method: "POST",
+          body: formData
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || "Erro ao enviar PDF.");
+        }
+
+        uploadForm.classList.add("hidden");
+        mostrarMensagem("PDF recebido com sucesso. Obrigado.", false, true);
+      } catch (error) {
+        console.error(error);
+        mostrarMensagem(error.message || "Erro ao enviar PDF.", true);
+        submitButton.disabled = false;
+        submitButton.textContent = "Enviar PDF assinado";
+      }
+    });
+
+    validarToken();
+  </script>
+</body>
+</html>
