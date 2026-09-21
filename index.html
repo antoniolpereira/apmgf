@@ -1061,17 +1061,195 @@
     }
 
     async function copiarLinkUpload(token) {
-      if (!token) {
-        mostrarMensagem(manifestosMessage, "Este manifesto não tem token.", true);
-        return;
-      }
+  if (!token) {
+    mostrarMensagem(
+      manifestosMessage,
+      "Este manifesto não tem token.",
+      true
+    );
+    return;
+  }
 
-      const baseUrl = window.location.origin + window.location.pathname.replace(/index\.html$/i, "");
-      const link = baseUrl + UPLOAD_PAGE + "?token=" + encodeURIComponent(token);
+  const baseUrl =
+    window.location.origin +
+    window.location.pathname.replace(/index\.html$/i, "");
 
-      try {
-        await navigator.clipboard.writeText(link);
-        mostrarMensagem(manifestosMessage, "Link copiado:\n" + link, false, true);
-      } catch (error) {
-        console.error("Erro ao copiar link:", error);
-        mostrarMensagem(manifestosMessage, "Não
+  const link =
+    baseUrl +
+    UPLOAD_PAGE +
+    "?token=" +
+    encodeURIComponent(token);
+
+  try {
+    await navigator.clipboard.writeText(link);
+
+    mostrarMensagem(
+      manifestosMessage,
+      "Link copiado:\n" + link,
+      false,
+      true
+    );
+  } catch (error) {
+    console.error("Erro ao copiar link:", error);
+
+    mostrarMensagem(
+      manifestosMessage,
+      "Não foi possível copiar automaticamente o link.",
+      true
+    );
+  }
+}
+
+async function descarregarPDFManifesto(path) {
+  try {
+    if (!path) {
+      throw new Error("Este manifesto não tem PDF associado.");
+    }
+
+    await obterSessaoValida();
+
+    mostrarMensagem(
+      manifestosMessage,
+      "A preparar o PDF...",
+      false
+    );
+
+    const { data, error } = await supabase.storage
+      .from(BUCKET_MANIFESTOS)
+      .createSignedUrl(path, 300);
+
+    if (error) {
+      throw error;
+    }
+
+    if (!data?.signedUrl) {
+      throw new Error("Não foi possível gerar o link do PDF.");
+    }
+
+    window.open(data.signedUrl, "_blank");
+
+    mostrarMensagem(
+      manifestosMessage,
+      "PDF preparado.",
+      false,
+      true
+    );
+  } catch (error) {
+    console.error("Erro ao descarregar PDF:", error);
+
+    const erroTratado = await tratarErroSessao(
+      error,
+      manifestosMessage
+    );
+
+    if (!erroTratado) {
+      mostrarMensagem(
+        manifestosMessage,
+        error.message || "Erro ao descarregar PDF.",
+        true
+      );
+    }
+  }
+}
+
+function formatarData(valor) {
+  if (!valor) {
+    return "—";
+  }
+
+  const data = new Date(valor);
+
+  if (Number.isNaN(data.getTime())) {
+    return String(valor);
+  }
+
+  return data.toLocaleString("pt-PT", {
+    dateStyle: "short",
+    timeStyle: "short"
+  });
+}
+
+function escaparCSV(valor) {
+  const texto = String(valor ?? "");
+
+  return `"${texto.replace(/"/g, '""')}"`;
+}
+
+function exportarManifestosCSV() {
+  if (!manifestosAtuais.length) {
+    mostrarMensagem(
+      manifestosMessage,
+      "Não existem manifestos carregados para exportar.",
+      true
+    );
+    return;
+  }
+
+  const cabecalho = [
+    "Número de sócio",
+    "Nome completo",
+    "Estado",
+    "PDF",
+    "Token",
+    "Atualizado"
+  ];
+
+  const linhas = manifestosAtuais.map(item => [
+    item.numero_socio ?? "",
+    item.nome_completo ?? "",
+    item.estado ?? "",
+    item.pdf_assinado_path ? "Disponível" : "",
+    item.token ?? "",
+    formatarData(
+      item.atualizado_em ||
+      item.recebido_em ||
+      item.enviado_em ||
+      item.criado_em
+    )
+  ]);
+
+  const csv = [
+    cabecalho.map(escaparCSV).join(";"),
+    ...linhas.map(linha =>
+      linha.map(escaparCSV).join(";")
+    )
+  ].join("\r\n");
+
+  const blob = new Blob(
+    ["\uFEFF" + csv],
+    {
+      type: "text/csv;charset=utf-8;"
+    }
+  );
+
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = url;
+
+  const candidatura =
+    document.getElementById("candidaturaInput").value.trim() ||
+    "candidatura";
+
+  link.download =
+    `manifestos_${candidatura}_${estadoManifestosAtual || "todos"}.csv`;
+
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 1000);
+
+  mostrarMensagem(
+    manifestosMessage,
+    "CSV exportado com sucesso.",
+    false,
+    true
+  );
+}
+
+  </script>
+</body>
+</html>
