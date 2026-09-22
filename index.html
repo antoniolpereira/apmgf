@@ -1103,6 +1103,10 @@ function criarLinkUpload(token) {
           p_candidatura: candidatura
         });
 
+        const { data, error } = await supabase.rpc("listar_estado_manifestos", {
+  p_candidatura: candidatura
+});
+
         if (error) {
           throw error;
         }
