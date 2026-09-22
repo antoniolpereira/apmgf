@@ -1107,13 +1107,24 @@ function criarLinkUpload(token) {
           throw error;
         }
 
-        const lista = Array.isArray(data) ? data : [];
+const lista = Array.isArray(data) ? data : [];
 
-        console.log("Manifestos recebidos pela aplicação:", lista);
+console.log("Manifestos recebidos pela aplicação:", lista);
 console.log("Estado selecionado:", estado);
 console.log(
   "Estados existentes:",
   [...new Set(lista.map(item => item.estado))]
+);
+
+console.table(
+  lista
+    .filter(item => item.estado === "recebido")
+    .map(item => ({
+      numero: item.numero_socio,
+      nome: item.nome_completo,
+      estado: item.estado,
+      pdf: item.pdf_assinado_path
+    }))
 );
         
         manifestosAtuais = lista.filter(item => item.estado === estado);
