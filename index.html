@@ -748,11 +748,8 @@
       return;
     }
 
-    const candidaturaInput = document.getElementById("candidaturaInput");
-
-    const candidatura =
-      candidaturaInput?.value.trim() || "candidatura-2025";
-
+   const candidatura = "candidatura-2025";
+    
     mostrarMensagem(
       message,
       "A preparar manifesto...",
@@ -1098,7 +1095,7 @@ function criarLinkUpload(token) {
         manifestosSummary.innerHTML = "";
         manifestosTable.classList.add("hidden");
 
-        const candidatura = document.getElementById("candidaturaInput").value.trim() || "candidatura-2025";
+       const candidatura = "candidatura-2025";
 
         mostrarMensagem(manifestosMessage, `A carregar manifestos com estado "${estado}"...`, false);
 
