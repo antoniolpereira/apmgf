@@ -1109,6 +1109,13 @@ function criarLinkUpload(token) {
 
         const lista = Array.isArray(data) ? data : [];
 
+        console.log("Manifestos recebidos pela aplicação:", lista);
+console.log("Estado selecionado:", estado);
+console.log(
+  "Estados existentes:",
+  [...new Set(lista.map(item => item.estado))]
+);
+        
         manifestosAtuais = lista.filter(item => item.estado === estado);
 
         if (manifestosAtuais.length === 0) {
