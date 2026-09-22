@@ -1235,9 +1235,27 @@ console.log(
   lista.filter(item => item.numero_socio === "6621")
 );
         
-        manifestosAtuais = lista.filter(item => item.estado === estado);
+      manifestosAtuais = lista
+  .filter(item => item.estado === estado)
+  .sort((a, b) => {
+    const dataA = new Date(
+      a.atualizado_em ||
+      a.recebido_em ||
+      a.enviado_em ||
+      a.criado_em
+    );
 
-        if (manifestosAtuais.length === 0) {
+    const dataB = new Date(
+      b.atualizado_em ||
+      b.recebido_em ||
+      b.enviado_em ||
+      b.criado_em
+    );
+
+    return dataB - dataA;
+  });
+
+if (manifestosAtuais.length === 0) {
           mostrarMensagem(manifestosMessage, `Não existem manifestos com estado "${estado}".`, false);
           atualizarResumoManifestos([]);
           return;
