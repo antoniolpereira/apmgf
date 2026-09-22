@@ -1388,9 +1388,7 @@ function exportarManifestosCSV() {
   const link = document.createElement("a");
   link.href = url;
 
-  const candidatura =
-    document.getElementById("candidaturaInput").value.trim() ||
-    "candidatura";
+const candidatura = "candidatura-2025";
 
   link.download =
     `manifestos_${candidatura}_${estadoManifestosAtual || "todos"}.csv`;
