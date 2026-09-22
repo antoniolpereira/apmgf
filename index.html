@@ -638,8 +638,19 @@
       }
     }
 
-    function criarLinhaResultado(associado) {
+   function criarLinhaResultado(associado) {
   const tr = document.createElement("tr");
+
+  const estadoManifesto = associado.manifesto_estado ?? "";
+  const tokenManifesto = associado.manifesto_token ?? "";
+  const pdfAssinadoPath = associado.pdf_assinado_path ?? "";
+
+  // Cor da linha de acordo com o estado do manifesto
+  if (estadoManifesto === "recebido") {
+    tr.style.backgroundColor = "#e8f5e9";
+  } else if (estadoManifesto === "pendente") {
+    tr.style.backgroundColor = "#fff8d6";
+  }
 
   const tdNumero = document.createElement("td");
   tdNumero.textContent = associado.numero_socio ?? "";
@@ -664,29 +675,92 @@
 
   const tdAcao = document.createElement("td");
 
-  const divAcoes = document.createElement("div");
-  divAcoes.className = "row-actions";
+  /*
+   * Se o manifesto já foi recebido:
+   * não mostrar quaisquer ações relativas ao manifesto.
+   */
+  if (estadoManifesto === "recebido") {
+    const estado = document.createElement("span");
+    estado.textContent = "Manifesto recebido";
+    estado.style.fontWeight = "600";
+    estado.style.color = "#2e7d32";
 
-  const guardarBtn = document.createElement("button");
-  guardarBtn.type = "button";
-  guardarBtn.textContent = "Guardar";
-  guardarBtn.addEventListener("click", () =>
-    guardarContacto(associado.id)
-  );
+    tdAcao.appendChild(estado);
 
-  const pdfBtn = document.createElement("button");
-  pdfBtn.type = "button";
-  pdfBtn.textContent = "Gerar PDF";
-  pdfBtn.className = "secondary";
+  } else {
 
-  pdfBtn.addEventListener("click", () =>
-    gerarPDFProponente(associado, tdAcao)
-  );
+    const divAcoes = document.createElement("div");
+    divAcoes.className = "row-actions";
 
-  divAcoes.appendChild(guardarBtn);
-  divAcoes.appendChild(pdfBtn);
+    const guardarBtn = document.createElement("button");
+    guardarBtn.type = "button";
+    guardarBtn.textContent = "Guardar";
+    guardarBtn.addEventListener("click", () =>
+      guardarContacto(associado.id)
+    );
 
-  tdAcao.appendChild(divAcoes);
+    divAcoes.appendChild(guardarBtn);
+
+    /*
+     * Sem manifesto:
+     * mostrar apenas "Gerar PDF".
+     */
+    if (!estadoManifesto) {
+
+      const pdfBtn = document.createElement("button");
+      pdfBtn.type = "button";
+      pdfBtn.textContent = "Gerar PDF";
+      pdfBtn.className = "secondary";
+
+      pdfBtn.addEventListener("click", () =>
+        gerarPDFProponente(associado, tdAcao)
+      );
+
+      divAcoes.appendChild(pdfBtn);
+
+    /*
+     * Manifesto pendente:
+     * permitir voltar a abrir o PDF e utilizar o link existente.
+     */
+    } else if (
+      estadoManifesto === "pendente" &&
+      tokenManifesto
+    ) {
+
+      const abrirPdfBtn = document.createElement("button");
+      abrirPdfBtn.type = "button";
+      abrirPdfBtn.textContent = "Abrir PDF";
+      abrirPdfBtn.className = "secondary";
+
+      abrirPdfBtn.addEventListener("click", () =>
+        abrirPDFProponente(associado)
+      );
+
+      const copiarBtn = document.createElement("button");
+      copiarBtn.type = "button";
+      copiarBtn.textContent = "Copiar link";
+
+      copiarBtn.addEventListener("click", () =>
+        copiarLinkUpload(tokenManifesto)
+      );
+
+      const abrirLinkBtn = document.createElement("button");
+      abrirLinkBtn.type = "button";
+      abrirLinkBtn.textContent = "Abrir link";
+      abrirLinkBtn.className = "secondary";
+
+      abrirLinkBtn.addEventListener("click", () => {
+        const link = criarLinkUpload(tokenManifesto);
+        window.open(link, "_blank");
+      });
+
+      divAcoes.appendChild(abrirPdfBtn);
+      divAcoes.appendChild(copiarBtn);
+      divAcoes.appendChild(abrirLinkBtn);
+    }
+
+    tdAcao.appendChild(divAcoes);
+  }
 
   tr.appendChild(tdNumero);
   tr.appendChild(tdNome);
@@ -696,6 +770,7 @@
 
   resultBody.appendChild(tr);
 }
+    
     async function guardarContacto(id) {
       try {
         await obterSessaoValida();
@@ -730,63 +805,26 @@
         }
       }
     }
+async function abrirPDFProponente(associado) {
+  // Abrir imediatamente uma nova janela para evitar bloqueio de popup
+  const novaJanela = window.open("", "_blank");
 
-   async function gerarPDFProponente(associado, tdAcao) {
   try {
-    await obterSessaoValida();
-
     const nome = associado.nome_completo ?? "";
     const numeroSocio = associado.numero_socio ?? "";
-    const associadoId = associado.id;
 
-    if (!nome || !numeroSocio || !associadoId) {
-      mostrarMensagem(
-        message,
-        "Não é possível gerar o manifesto sem nome, número de sócio e identificador do associado.",
-        true
-      );
-      return;
-    }
-
-   const candidatura = "candidatura-2025";
-    
-    mostrarMensagem(
-      message,
-      "A preparar manifesto...",
-      false
-    );
-
-    /*
-     * Criar ou recuperar o manifesto existente.
-     *
-     * Se já existir um manifesto para este associado e candidatura,
-     * o RPC devolve o mesmo token.
-     */
-    const { data: manifesto, error: manifestoError } =
-      await supabase.rpc("criar_manifesto_assinatura", {
-        p_associado_id: associadoId,
-        p_candidatura: candidatura
-      });
-
-    if (manifestoError) {
-      throw manifestoError;
-    }
-
-    if (!manifesto || !manifesto.token) {
+    if (!nome || !numeroSocio) {
       throw new Error(
-        "Não foi possível criar ou recuperar o token do manifesto."
+        "Não é possível abrir o PDF sem nome e número de sócio."
       );
     }
 
     mostrarMensagem(
       message,
-      "A gerar PDF...",
+      "A preparar PDF...",
       false
     );
 
-    /*
-     * Carregar o modelo PDF.
-     */
     const response = await fetch(
       "manifesto_proponentes_modelo.pdf"
     );
@@ -815,17 +853,83 @@
 
     const pdfBytes = await pdfDoc.save();
 
+    const blob = new Blob([pdfBytes], {
+      type: "application/pdf"
+    });
+
+    const url = URL.createObjectURL(blob);
+
+    if (novaJanela && !novaJanela.closed) {
+      novaJanela.location.href = url;
+    } else {
+      window.open(url, "_blank");
+    }
+
+  } catch (error) {
+    console.error(
+      "Erro ao abrir PDF:",
+      error
+    );
+
+    if (novaJanela && !novaJanela.closed) {
+      novaJanela.close();
+    }
+
+    mostrarMensagem(
+      message,
+      error.message || "Erro ao abrir PDF.",
+      true
+    );
+  }
+}
+   async function gerarPDFProponente(associado, tdAcao) {
+  try {
+    await obterSessaoValida();
+
+    const nome = associado.nome_completo ?? "";
+    const numeroSocio = associado.numero_socio ?? "";
+    const associadoId = associado.id;
+
+    if (!nome || !numeroSocio || !associadoId) {
+      mostrarMensagem(
+        message,
+        "Não é possível gerar o manifesto sem nome, número de sócio e identificador do associado.",
+        true
+      );
+      return;
+    }
+
+    const candidatura = "candidatura-2025";
+
+    mostrarMensagem(
+      message,
+      "A preparar manifesto...",
+      false
+    );
+
     /*
-     * Descarregar o PDF.
+     * Criar ou recuperar o manifesto existente.
      */
-const blob = new Blob([pdfBytes], {
-  type: "application/pdf"
-});
+    const { data: manifesto, error: manifestoError } =
+      await supabase.rpc("criar_manifesto_assinatura", {
+        p_associado_id: associadoId,
+        p_candidatura: candidatura
+      });
 
-const url = URL.createObjectURL(blob);
+    if (manifestoError) {
+      throw manifestoError;
+    }
 
-// Abrir o PDF numa nova página/aba
-window.open(url, "_blank");
+    if (!manifesto || !manifesto.token) {
+      throw new Error(
+        "Não foi possível criar ou recuperar o token do manifesto."
+      );
+    }
+
+    /*
+     * Abrir o PDF gerado.
+     */
+    await abrirPDFProponente(associado);
 
     /*
      * Criar o link persistente para upload.
@@ -844,14 +948,14 @@ window.open(url, "_blank");
     );
 
     /*
-     * Mostrar ações do manifesto.
+     * Mostrar as ações do manifesto na linha.
      */
-   mostrarAcoesManifesto(
-  manifesto.token,
-  manifesto.estado,
-  manifesto.pdf_assinado_path,
-  tdAcao
-);
+    mostrarAcoesManifesto(
+      manifesto.token,
+      manifesto.estado,
+      manifesto.pdf_assinado_path,
+      tdAcao
+    );
 
   } catch (error) {
     console.error(
@@ -875,7 +979,6 @@ window.open(url, "_blank");
     }
   }
 }
-
     function criarNomeFicheiroPDF(nome, numeroSocio) {
       const nomeLimpo = String(nome)
         .normalize("NFD")
