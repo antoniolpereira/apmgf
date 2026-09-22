@@ -823,25 +823,14 @@
     /*
      * Descarregar o PDF.
      */
-    const blob = new Blob(
-      [pdfBytes],
-      { type: "application/pdf" }
-    );
+const blob = new Blob([pdfBytes], {
+  type: "application/pdf"
+});
 
-    const url = URL.createObjectURL(blob);
+const url = URL.createObjectURL(blob);
 
-    const linkDownload = document.createElement("a");
-    linkDownload.href = url;
-    linkDownload.download =
-      criarNomeFicheiroPDF(nome, numeroSocio);
-
-    document.body.appendChild(linkDownload);
-    linkDownload.click();
-    linkDownload.remove();
-
-    setTimeout(() => {
-      URL.revokeObjectURL(url);
-    }, 1000);
+// Abrir o PDF numa nova página/aba
+window.open(url, "_blank");
 
     /*
      * Criar o link persistente para upload.
