@@ -1126,6 +1126,11 @@ console.table(
       pdf: item.pdf_assinado_path
     }))
 );
+
+console.log(
+  "Nina 6621:",
+  lista.filter(item => item.numero_socio === "6621")
+);
         
         manifestosAtuais = lista.filter(item => item.estado === estado);
 
