@@ -1499,19 +1499,39 @@ function exportarManifestosCSV() {
     "Atualizado"
   ];
 
-  const linhas = manifestosAtuais.map(item => [
-    item.numero_socio ?? "",
-    item.nome_completo ?? "",
-    item.estado ?? "",
-    item.pdf_assinado_path ? "Disponível" : "",
-    item.pdf_assinado_path ?? "",
-    formatarData(
-      item.atualizado_em ||
-      item.recebido_em ||
-      item.enviado_em ||
-      item.criado_em
-    )
-  ]);
+ const obterEstadoPdf = (pdfAssinadoPath?: string | null) => {
+  const valor = pdfAssinadoPath?.trim();
+
+  if (!valor) return "";
+
+  if (valor.toLowerCase() === "manual") return "manual";
+
+  return "Disponível";
+};
+
+const obterCaminhoPdf = (pdfAssinadoPath?: string | null) => {
+  const valor = pdfAssinadoPath?.trim();
+
+  if (!valor) return "";
+
+  if (valor.toLowerCase() === "manual") return "";
+
+  return valor;
+};
+
+const linhas = manifestosAtuais.map(item => [
+  item.numero_socio ?? "",
+  item.nome_completo ?? "",
+  item.estado ?? "",
+  obterEstadoPdf(item.pdf_assinado_path),
+  obterCaminhoPdf(item.pdf_assinado_path),
+  formatarData(
+    item.atualizado_em ||
+    item.recebido_em ||
+    item.enviado_em ||
+    item.criado_em
+  )
+]);
 
   const csv = [
     cabecalho.map(escaparCSV).join(";"),
