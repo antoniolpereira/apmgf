@@ -1499,7 +1499,7 @@ function exportarManifestosCSV() {
     "Atualizado"
   ];
 
- const obterEstadoPdf = (pdfAssinadoPath?: string | null) => {
+ const obterEstadoPdf = (pdfAssinadoPath) => {
   const valor = pdfAssinadoPath?.trim();
 
   if (!valor) return "";
@@ -1509,7 +1509,7 @@ function exportarManifestosCSV() {
   return "Disponível";
 };
 
-const obterCaminhoPdf = (pdfAssinadoPath?: string | null) => {
+const obterCaminhoPdf = (pdfAssinadoPath) => {
   const valor = pdfAssinadoPath?.trim();
 
   if (!valor) return "";
