@@ -1287,59 +1287,74 @@ if (manifestosAtuais.length === 0) {
       }
     }
 
-    function criarLinhaManifesto(item) {
-      const tr = document.createElement("tr");
+   function criarLinhaManifesto(item) {
+  const tr = document.createElement("tr");
 
-      const tdNumero = document.createElement("td");
-      tdNumero.textContent = item.numero_socio ?? "";
+  const tdNumero = document.createElement("td");
+  tdNumero.textContent = item.numero_socio ?? "";
 
-      const tdNome = document.createElement("td");
-      tdNome.textContent = item.nome_completo ?? "";
+  const tdNome = document.createElement("td");
+  tdNome.textContent = item.nome_completo ?? "";
 
-      const tdEstado = document.createElement("td");
-      const pill = document.createElement("span");
-      pill.className = `status-pill estado-${item.estado || ""}`;
-      pill.textContent = item.estado ?? "";
-      tdEstado.appendChild(pill);
+  const tdEstado = document.createElement("td");
+  const pill = document.createElement("span");
+  pill.className = `status-pill estado-${item.estado || ""}`;
+  pill.textContent = item.estado ?? "";
+  tdEstado.appendChild(pill);
 
-      const tdPdf = document.createElement("td");
-      tdPdf.textContent = item.pdf_assinado_path ? "Disponível" : "—";
+  const tdPdf = document.createElement("td");
 
-      const tdAtualizado = document.createElement("td");
-      tdAtualizado.textContent = formatarData(
-        item.atualizado_em || item.recebido_em || item.enviado_em || item.criado_em
-      );
+  const pdfPath = item.pdf_assinado_path;
+  const isManual = pdfPath === "manual";
+  const hasPdfDigital = Boolean(pdfPath) && !isManual;
 
-      const tdAcoes = document.createElement("td");
-      const divAcoes = document.createElement("div");
-      divAcoes.className = "row-actions";
+  if (isManual) {
+    tdPdf.textContent = "Manual";
+  } else if (hasPdfDigital) {
+    tdPdf.textContent = "Disponível";
+  } else {
+    tdPdf.textContent = "—";
+  }
 
-      const copiarBtn = document.createElement("button");
-      copiarBtn.type = "button";
-      copiarBtn.textContent = "Copiar link";
-      copiarBtn.addEventListener("click", () => copiarLinkUpload(item.token));
+  const tdAtualizado = document.createElement("td");
+  tdAtualizado.textContent = formatarData(
+    item.atualizado_em || item.recebido_em || item.enviado_em || item.criado_em
+  );
 
-      const downloadBtn = document.createElement("button");
-      downloadBtn.type = "button";
-      downloadBtn.textContent = "Baixar PDF";
-      downloadBtn.className = "success-button";
-      downloadBtn.disabled = !item.pdf_assinado_path;
-      downloadBtn.addEventListener("click", () => descarregarPDFManifesto(item.pdf_assinado_path));
+  const tdAcoes = document.createElement("td");
+  const divAcoes = document.createElement("div");
+  divAcoes.className = "row-actions";
 
-      divAcoes.appendChild(copiarBtn);
-      divAcoes.appendChild(downloadBtn);
+  const copiarBtn = document.createElement("button");
+  copiarBtn.type = "button";
+  copiarBtn.textContent = "Copiar link";
+  copiarBtn.addEventListener("click", () => copiarLinkUpload(item.token));
 
-      tdAcoes.appendChild(divAcoes);
+  const downloadBtn = document.createElement("button");
+  downloadBtn.type = "button";
+  downloadBtn.textContent = "Baixar PDF";
+  downloadBtn.className = "success-button";
 
-      tr.appendChild(tdNumero);
-      tr.appendChild(tdNome);
-      tr.appendChild(tdEstado);
-      tr.appendChild(tdPdf);
-      tr.appendChild(tdAtualizado);
-      tr.appendChild(tdAcoes);
+  downloadBtn.disabled = !hasPdfDigital;
 
-      manifestosBody.appendChild(tr);
-    }
+  if (hasPdfDigital) {
+    downloadBtn.addEventListener("click", () => descarregarPDFManifesto(pdfPath));
+  }
+
+  divAcoes.appendChild(copiarBtn);
+  divAcoes.appendChild(downloadBtn);
+
+  tdAcoes.appendChild(divAcoes);
+
+  tr.appendChild(tdNumero);
+  tr.appendChild(tdNome);
+  tr.appendChild(tdEstado);
+  tr.appendChild(tdPdf);
+  tr.appendChild(tdAtualizado);
+  tr.appendChild(tdAcoes);
+
+  manifestosBody.appendChild(tr);
+}
 
     function atualizarResumoManifestos(lista) {
       manifestosSummary.innerHTML = "";
