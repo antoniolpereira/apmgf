@@ -1495,7 +1495,7 @@ function escaparCSV(valor) {
   return `"${texto.replace(/"/g, '""')}"`;
 }
 
-function exportarManifestosCSV() {
+async function exportarManifestosCSV() {
   if (!manifestosAtuais.length) {
     mostrarMensagem(
       manifestosMessage,
@@ -1510,43 +1510,54 @@ function exportarManifestosCSV() {
     "Nome completo",
     "Estado",
     "PDF",
-    "Token",
+    "Link PDF",
     "Atualizado"
   ];
 
- const obterEstadoPdf = (pdfAssinadoPath) => {
-  const valor = pdfAssinadoPath?.trim();
+  const obterEstadoPdf = (pdfAssinadoPath) => {
+    const valor = pdfAssinadoPath?.trim();
 
-  if (!valor) return "";
+    if (!valor) return "";
 
-  if (valor.toLowerCase() === "manual") return "manual";
+    if (valor.toLowerCase() === "manual") return "manual";
 
-  return "Disponível";
-};
+    return "Disponível";
+  };
 
-const obterCaminhoPdf = (pdfAssinadoPath) => {
-  const valor = pdfAssinadoPath?.trim();
+  const obterLinkPdf = async (pdfAssinadoPath) => {
+    const valor = pdfAssinadoPath?.trim();
 
-  if (!valor) return "";
+    if (!valor) return "";
 
-  if (valor.toLowerCase() === "manual") return "";
+    if (valor.toLowerCase() === "manual") return "manual";
 
-  return valor;
-};
+    const { data, error } = await supabase.storage
+      .from("manifestos-assinados")
+      .createSignedUrl(valor, 60 * 60 * 24 * 30);
 
-const linhas = manifestosAtuais.map(item => [
-  item.numero_socio ?? "",
-  item.nome_completo ?? "",
-  item.estado ?? "",
-  obterEstadoPdf(item.pdf_assinado_path),
-  obterCaminhoPdf(item.pdf_assinado_path),
-  formatarData(
-    item.atualizado_em ||
-    item.recebido_em ||
-    item.enviado_em ||
-    item.criado_em
-  )
-]);
+    if (error || !data?.signedUrl) {
+      console.error("Erro ao gerar link do PDF:", error);
+      return "";
+    }
+
+    return data.signedUrl;
+  };
+
+  const linhas = await Promise.all(
+    manifestosAtuais.map(async (item) => [
+      item.numero_socio ?? "",
+      item.nome_completo ?? "",
+      item.estado ?? "",
+      obterEstadoPdf(item.pdf_assinado_path),
+      await obterLinkPdf(item.pdf_assinado_path),
+      formatarData(
+        item.atualizado_em ||
+        item.recebido_em ||
+        item.enviado_em ||
+        item.criado_em
+      )
+    ])
+  );
 
   const csv = [
     cabecalho.map(escaparCSV).join(";"),
@@ -1567,7 +1578,7 @@ const linhas = manifestosAtuais.map(item => [
   const link = document.createElement("a");
   link.href = url;
 
-const candidatura = "candidatura-2025";
+  const candidatura = "candidatura-2025";
 
   link.download =
     `manifestos_${candidatura}_${estadoManifestosAtual || "todos"}.csv`;
