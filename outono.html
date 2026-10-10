@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Programa do congresso</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700&display=swap">
+<style>
+:root{--bg:#F6F7F9;--card:#fff;--ink:#16212B;--mute:#5E6B78;--line:#DCE1E7;--acc:#0E5C73;--accink:#fff;--gold:#F5C542;--goldink:#3A2A00;--warn:#B42318;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0E151B;--card:#17212A;--ink:#EAF0F5;--mute:#9AA8B5;--line:#2A3743;--acc:#5BC0DB;--accink:#06222B;--warn:#FF8A80}}
+:root[data-theme="dark"]{--bg:#0E151B;--card:#17212A;--ink:#EAF0F5;--mute:#9AA8B5;--line:#2A3743;--acc:#5BC0DB;--accink:#06222B;--warn:#FF8A80}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:400 16px/1.45 'Schibsted Grotesk',system-ui,-apple-system,'Segoe UI',sans-serif;padding-bottom:84px}
+.wrap{max-width:560px;margin:0 auto;padding:0 16px}
+header{padding:20px 0 8px}
+h1{font-size:22px;line-height:1.2;margin:0 0 2px;font-weight:700}
+.sub{color:var(--mute);font-size:14px;margin:0}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:10px 0;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:8px 14px;font:inherit;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.chip[aria-pressed="true"]{background:var(--acc);color:var(--accink);border-color:var(--acc)}
+.dot{width:10px;height:10px;border-radius:50%;flex:none}
+.slot{position:sticky;top:env(safe-area-inset-top,0px);z-index:2;background:var(--bg);margin:14px 0 6px;padding:4px 0;font-weight:700;font-size:15px;color:var(--mute)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin:0 0 10px;display:grid;grid-template-columns:1fr auto;gap:4px 12px;border-left:5px solid var(--rc)}
+.card h3{margin:0;font-size:16px;line-height:1.3;font-weight:700}
+.meta{color:var(--mute);font-size:14px}
+.row{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center}
+.badge{background:var(--gold);color:var(--goldink);font-size:12px;font-weight:700;border-radius:6px;padding:2px 8px}
+.conf{color:var(--warn);font-size:13px;font-weight:500}
+.star{grid-row:1/3;grid-column:2;align-self:start;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--mute);cursor:pointer;display:grid;place-items:center}
+.star svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8}
+.star[aria-pressed="true"]{background:var(--acc);border-color:var(--acc);color:var(--accink)}
+.star[aria-pressed="true"] svg{fill:currentColor}
+.tag{border:1px solid var(--line);color:var(--mute);font-size:12px;border-radius:6px;padding:2px 8px}
+.pause{opacity:.75;grid-template-columns:1fr}.pause h3{font-weight:500}
+.empty{padding:32px 8px;text-align:center;color:var(--mute)}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px));display:flex;gap:8px;justify-content:center}
+nav button{flex:1;max-width:260px;border:0;background:transparent;color:var(--mute);font:inherit;font-size:14px;font-weight:500;padding:10px;border-radius:10px;cursor:pointer}
+nav button[aria-current="page"]{background:var(--acc);color:var(--accink)}
+.toast{position:fixed;left:16px;right:16px;bottom:calc(76px + env(safe-area-inset-bottom,0px));max-width:528px;margin:0 auto;background:var(--ink);color:var(--bg);padding:12px 14px;border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.on{opacity:1}
+button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<h1>Programa do congresso</h1>
+<p class="sub" id="sub">Programa</p>
+</header>
+<div class="chips" id="days" role="group" aria-label="Dia"></div>
+<div class="chips" id="rooms" role="group" aria-label="Sala"></div>
+<main id="list"></main>
+</div>
+<nav>
+<button id="tabP" aria-current="page">Programa</button>
+<button id="tabA">O meu percurso</button>
+</nav>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+// DEMO: contagens fictícias só para ver o selo. Em produção vêm da vista session_popularity.
+var DEMO_SAVES={S019:310,S037:260,S001:230,S011:215};
+var ROOMS={A:{n:'Auditório',c:'#0E7C86'},B:{n:'Sala Douro',c:'#5B5BD6'},C:{n:'Sala Tejo',c:'#B83280'},D:{n:'Exterior',c:'#7A8794'}};
+var DAYS=['Qui 19 nov','Sex 20 nov','Sáb 21 nov'];
+// Programa real (programa.csv). Campos: id, dia, início, fim, sala, grupo, título, tipo, selecionável
+var S=[["S001",1,"09:00","10:00","A","Diabetes 2.0: quando a tecnologia entra na consulta","GED/GE Saúde Digital","Sessão",true],
+["S002",1,"09:00","10:00","B","Quando o corpo fala: compreender a somatização","GESM","Sessão",true],
+["S003",1,"09:00","10:00","C","Leite, fórmula ou ambos? Decidir na prática","GENEF","Sessão",true],
+["S004",1,"10:00","11:00","A","Saúde Infantil em Números: como dominar os indicadores?","GESIJ","Sessão",true],
+["S005",1,"10:00","11:00","B","Quando a consulta vai até casa","GE Idoso/GE Saúde Digital","Sessão",true],
+["S006",1,"10:00","11:00","C","Famílias Arco-Íris em Consulta: Competências em MGF","GE Diversidades/GE Família","Sessão",true],
+["S007",1,"11:30","12:00","B","Sessão de Abertura","Organização","Sessão institucional",true],
+["S008",1,"12:00","12:30","B","Simpósio MSD","Patrocinador MSD","Simpósio",true],
+["S009",1,"12:30","13:00","B","Simpósio Faes","Patrocinador Faes","Simpósio",true],
+["S028",1,"13:00","14:30","D","Almoço","Organização","Pausa",true],
+["S011",1,"14:30","15:30","A","POCUS Bingo: quantos consegues identificar?","GECO","Sessão",true],
+["S012",1,"14:30","15:30","B","Conexão Digital: quando a tecnologia aproxima - ou afasta","GESEX","Sessão",true],
+["S013",1,"14:30","15:30","C","Rir na consulta: quando o humor ajuda","MCP","Sessão",true],
+["S014",1,"15:30","16:30","A","Sessão Patrocinada","GEST","Sessão patrocinada",true],
+["X15",1,"15:30","16:30","B","Sessão patrocinada — Rinite / Anafilaxia","GRESP","Sessão patrocinada",true],
+["X16",1,"16:30","17:00","A","Sessão Patrocinada","Simpósio Tecnifar","Sessão patrocinada",true],
+["S016",1,"17:30","18:30","A","Comunicações livres","Comunicações livres","Comunicações livres",true],
+["S017",1,"17:30","18:30","B","Comunicações livres","Comunicações livres","Comunicações livres",true],
+["S018",1,"17:30","18:30","C","Comunicações livres","Comunicações livres","Comunicações livres",true],
+["S019",2,"09:00","10:00","A","Incretinas: a revolução já chegou à consulta?","GE Obesidade/GED","Sessão",true],
+["S020",2,"09:00","10:00","B","Sessão Especial","Sessão Especial","Sessão especial",true],
+["S021",2,"09:00","10:00","C","Dor: tratar, escutar ou ambas?","GE Dor/CI Algarve","Sessão",true],
+["X23",2,"09:00","11:00","D","Dor: tratar, escutar ou ambas?","GE Dor/CI Algarve","Sessão",true],
+["S022",2,"10:00","11:00","A","Sexo, drogas e risco: estamos a perguntar o que interessa?","GE Diversidades/GEsCAd","Sessão",true],
+["S023",2,"10:00","11:00","B","Decision Lab","GE One Health","Sessão",true],
+["S024",2,"10:00","11:00","C","Internato MGF pelo Mundo","CI Zona Centro","Sessão",true],
+["S025",2,"11:30","12:00","A","Simpósio SWORD","Patrocinador SWORD","Simpósio",true],
+["S026",2,"12:00","12:30","A","Simpósio Viatris","Patrocinador Viatris","Simpósio",true],
+["S027",2,"12:30","13:00","A","Simpósio Merck - “Mitos” na HTA","Patrocinador Merck","Simpósio",true],
+["S028",2,"13:00","14:30","D","Almoço","Organização","Pausa",true],
+["S029",2,"14:30","15:30","A","Rir na consulta: quando o humor ajuda","GEPeCx/GE Saúde Digital","Sessão",true],
+["S030",2,"14:30","15:30","B","Respirar melhor: decisões práticas nas doenças respiratórias","GRESP e GEST","Sessão",true],
+["S046",2,"14:30","15:30","C","Sexualidade na doença avançada","GE Cuidados Paliativos e GESEX","Sessão",true],
+["S031",2,"15:30","16:00","A","Sessão Especial","Patrocinador","Sessão patrocinada",true],
+["S032",2,"16:00","16:30","B","Simpósio Bial","Patrocinador Bial","Simpósio",true],
+["S034",2,"17:15","18:15","A","Comunicações livres","Comunicações livres","Comunicações livres",true],
+["S035",2,"17:15","18:15","B","Comunicações livres","Comunicações livres","Comunicações livres",true],
+["S036",2,"17:15","18:15","C","Comunicações livres","Comunicações livres","Comunicações livres",true],
+["S037",3,"09:00","10:00","A","7 passos da consulta com IA","GESD","Sessão",true],
+["S038",3,"09:00","10:00","B","Incontinência Urinária feminina e pessários","GESMulher","Sessão",true],
+["S039",3,"09:00","10:00","C","ICFEp: reconhecer o que não é tão evidente","GEsCard","Sessão",true],
+["S041",3,"10:00","11:00","B","Sessão Especial","Sessão Especial","Sessão especial",true],
+["S042",3,"10:00","11:00","B","Bolsas AICIB","AICIB","Sessão",true],
+["S043",3,"10:00","11:00","C","Práticas em partilha","—","Sessão",true],
+["S044",3,"11:30","12:00","C","PITCH","Organização","Sessão",true],
+["S045",3,"12:00","13:00","C","Sessão de Encerramento","Organização","Sessão institucional",true]].map(function(r){return{id:r[0],day:r[1],s:r[2],e:r[3],room:r[4],title:r[5],grp:r[6],type:r[7],sel:r[8],saves:DEMO_SAVES[r[0]]||0}});
+var BADGE_MIN=200; // só mostra «Mais procurada» a partir deste nº de marcações
+var st={tab:'p',day:1,room:'all',mine:[]};
+try{st.mine=JSON.parse(localStorage.getItem('mine2')||'[]')}catch(e){}
+function save(){try{localStorage.setItem('mine2',JSON.stringify(st.mine))}catch(e){}}
+st.mine=st.mine.filter(function(i){return S.some(function(x){return x.id===i&&x.sel})});
+var $=function(i){return document.getElementById(i)};
+var has=function(id){return st.mine.indexOf(id)>-1};
+var total=function(x){return x.saves+(has(x.id)?1:0)};
+function overlap(a,b){return a.day===b.day&&a.s<b.e&&b.s<a.e}
+function conflicts(x){return S.filter(function(y){return y.id!==x.id&&has(y.id)&&overlap(x,y)})}
+var starSvg='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z"/></svg>';
+function card(x){
+ var c=conflicts(x),r=ROOMS[x.room],p=x.type==='Pausa';
+ var tag=(x.type!=='Sessão'&&!p)?'<span class="tag">'+x.type+'</span>':'';
+ return '<article class="card'+(p?' pause':'')+'" style="--rc:'+r.c+'"><div><h3>'+x.title+'</h3>'+
+ (x.grp&&x.grp!=='—'?'<div class="meta">'+x.grp+'</div>':'')+'<div class="row"><span class="meta">'+x.s+'–'+x.e+' · '+r.n+'</span>'+tag+
+ (total(x)>=BADGE_MIN?'<span class="badge">Mais procurada</span>':'')+'</div>'+
+ (has(x.id)&&c.length?'<div class="conf">Sobrepõe-se a: '+c.map(function(y){return y.title.split(':')[0]}).join('; ')+'</div>':'')+'</div>'+
+ (p?'':'<button class="star" data-id="'+x.id+'" aria-pressed="'+has(x.id)+'" aria-label="'+(has(x.id)?'Remover do meu percurso: ':'Adicionar ao meu percurso: ')+x.title+'">'+starSvg+'</button>')+'</article>';
+}
+function chips(){
+ $('days').innerHTML=DAYS.map(function(t,i){var d=i+1;return '<button class="chip" data-day="'+d+'" aria-pressed="'+(st.day===d)+'">'+t+'</button>'}).join('');
+ $('rooms').innerHTML='<button class="chip" data-room="all" aria-pressed="'+(st.room==='all')+'">Todas as salas</button>'+
+ Object.keys(ROOMS).map(function(k){return '<button class="chip" data-room="'+k+'" aria-pressed="'+(st.room===k)+'"><span class="dot" style="background:'+ROOMS[k].c+'"></span>'+ROOMS[k].n+'</button>'}).join('');
+ $('days').style.display=$('rooms').style.display=st.tab==='p'?'flex':'none';
+}
+function render(){
+ chips();
+ var h='';
+ if(st.tab==='p'){
+  $('sub').textContent='Programa';
+  var l=S.filter(function(x){return x.day===st.day&&(st.room==='all'||x.room===st.room)}).sort(function(a,b){return a.s<b.s?-1:a.s>b.s?1:a.room<b.room?-1:1});
+  var last='';
+  l.forEach(function(x){if(x.s!==last){h+='<div class="slot">'+x.s+'</div>';last=x.s}h+=card(x,false)});
+  if(!l.length)h='<div class="empty">Sem sessões para este filtro.</div>';
+ }else{
+  var m=S.filter(function(x){return has(x.id)}).sort(function(a,b){return a.day-b.day||(a.s<b.s?-1:1)});
+  $('sub').textContent='O meu percurso · '+m.length+(m.length===1?' sessão':' sessões');
+  if(!m.length)h='<div class="empty">Ainda não marcou sessões.<br>No programa, toque na estrela para as adicionar aqui.</div>';
+  var d=0;
+  m.forEach(function(x){if(x.day!==d){d=x.day;h+='<div class="slot">'+DAYS[d-1]+'</div>'}h+=card(x,false)});
+ }
+ $('list').innerHTML=h;
+ $('tabP').setAttribute('aria-current',st.tab==='p'?'page':'false');
+ $('tabA').setAttribute('aria-current',st.tab==='a'?'page':'false');
+ $('tabA').textContent='O meu percurso'+(st.mine.length?' ('+st.mine.length+')':'');
+}
+var tt;
+function toast(t){var e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(tt);tt=setTimeout(function(){e.classList.remove('on')},3200)}
+document.addEventListener('click',function(ev){
+ var b=ev.target.closest('button');if(!b)return;
+ if(b.dataset.day){st.day=+b.dataset.day;render()}
+ else if(b.dataset.room){st.room=b.dataset.room;render()}
+ else if(b.dataset.id){
+  var id=b.dataset.id,x=S.filter(function(y){return y.id===id})[0],y=window.scrollY;
+  if(has(id)){st.mine=st.mine.filter(function(i){return i!==id});toast('Removida do seu percurso.')}
+  else{st.mine.push(id);var c=conflicts(x);toast(c.length?'Adicionada. Atenção: sobrepõe-se a "'+c[0].title+'".':'Adicionada ao seu percurso.')}
+  save();render();window.scrollTo(0,y);
+ }
+ else if(b.id==='tabP'){st.tab='p';render();window.scrollTo(0,0)}
+ else if(b.id==='tabA'){st.tab='a';render();window.scrollTo(0,0)}
+});
+render();
+</script>
+</body>
+</html>
