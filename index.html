@@ -406,7 +406,8 @@
 
     const BUCKET_MANIFESTOS = "manifestos-assinados";
     const UPLOAD_PAGE = "upload.html";
-
+    const GERAR_CARTAO_URL = "https://xyyyqplnioeiedxzjetm.supabase.co/functions/v1/gerar-cartao";
+    
     const REGIOES = [
       "AVEIRO",
       "BEJA",
@@ -638,7 +639,7 @@
       }
     }
 
-   function criarLinhaResultado(associado) {
+  function criarLinhaResultado(associado) {
   const tr = document.createElement("tr");
 
   const estadoManifesto = associado.manifesto_estado ?? "";
@@ -675,20 +676,47 @@
 
   const tdAcao = document.createElement("td");
 
+  function adicionarBotaoCartao(container) {
+    const cartaoBtn = document.createElement("button");
+    cartaoBtn.type = "button";
+
+    if (associado.pass_url) {
+      cartaoBtn.textContent = "Abrir cartão";
+      cartaoBtn.className = "success-button";
+      cartaoBtn.addEventListener("click", () => {
+        window.open(associado.pass_url, "_blank");
+      });
+    } else {
+      cartaoBtn.textContent = "Gerar cartão";
+      cartaoBtn.className = "warning-button";
+      cartaoBtn.addEventListener("click", () => {
+        gerarCartaoAssociado(associado, cartaoBtn);
+      });
+    }
+
+    container.appendChild(cartaoBtn);
+  }
+
   /*
    * Se o manifesto já foi recebido:
-   * não mostrar quaisquer ações relativas ao manifesto.
+   * não mostrar ações relativas ao manifesto,
+   * mas mostrar o botão do cartão digital.
    */
   if (estadoManifesto === "recebido") {
+    const divAcoes = document.createElement("div");
+    divAcoes.className = "row-actions";
+
     const estado = document.createElement("span");
     estado.textContent = "Manifesto recebido";
     estado.style.fontWeight = "600";
     estado.style.color = "#2e7d32";
 
-    tdAcao.appendChild(estado);
+    divAcoes.appendChild(estado);
+    adicionarBotaoCartao(divAcoes);
+
+    tdAcao.appendChild(divAcoes);
 
   } else {
-
     const divAcoes = document.createElement("div");
     divAcoes.className = "row-actions";
 
@@ -703,10 +731,9 @@
 
     /*
      * Sem manifesto:
-     * mostrar apenas "Gerar PDF".
+     * mostrar "Gerar PDF".
      */
     if (!estadoManifesto) {
-
       const pdfBtn = document.createElement("button");
       pdfBtn.type = "button";
       pdfBtn.textContent = "Gerar PDF";
@@ -726,7 +753,6 @@
       estadoManifesto === "pendente" &&
       tokenManifesto
     ) {
-
       const abrirPdfBtn = document.createElement("button");
       abrirPdfBtn.type = "button";
       abrirPdfBtn.textContent = "Abrir PDF";
@@ -758,6 +784,12 @@
       divAcoes.appendChild(copiarBtn);
       divAcoes.appendChild(abrirLinkBtn);
     }
+
+    /*
+     * Botão do cartão digital.
+     * Aparece em todos os associados encontrados.
+     */
+    adicionarBotaoCartao(divAcoes);
 
     tdAcao.appendChild(divAcoes);
   }
@@ -805,6 +837,99 @@
         }
       }
     }
+
+    async function gerarCartaoAssociado(associado, botao) {
+  try {
+    await obterSessaoValida();
+
+    if (!associado || !associado.id) {
+      throw new Error("Associado sem identificador.");
+    }
+
+    if (botao) {
+      botao.disabled = true;
+      botao.textContent = "A gerar...";
+    }
+
+    mostrarMensagem(
+      message,
+      `A gerar cartão digital para ${associado.nome_completo || "associado"}...`,
+      false
+    );
+
+    const session = await obterSessaoValida();
+
+    const response = await fetch(GERAR_CARTAO_URL, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${session.access_token}`,
+        "apikey": SUPABASE_ANON_KEY,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        id: associado.id
+      })
+    });
+
+    let result = null;
+
+    try {
+      result = await response.json();
+    } catch {
+      throw new Error("A função não devolveu uma resposta JSON válida.");
+    }
+
+    if (!response.ok) {
+      console.error("Erro da Edge Function:", result);
+      throw new Error(result?.error || "Erro ao gerar cartão digital.");
+    }
+
+    if (!result?.url) {
+      console.error("Resposta inesperada:", result);
+      throw new Error("A função não devolveu o link do cartão.");
+    }
+
+    mostrarMensagem(
+      message,
+      result.existente
+        ? "Cartão digital já existia. A abrir..."
+        : "Cartão digital criado com sucesso. A abrir...",
+      false,
+      true
+    );
+
+    window.open(result.url, "_blank");
+
+    if (botao) {
+      botao.textContent = "Abrir cartão";
+      botao.className = "success-button";
+      botao.disabled = false;
+
+      botao.onclick = () => {
+        window.open(result.url, "_blank");
+      };
+    }
+
+  } catch (error) {
+    console.error("Erro ao gerar cartão:", error);
+
+    const erroTratado = await tratarErroSessao(error, message);
+
+    if (!erroTratado) {
+      mostrarMensagem(
+        message,
+        error.message || "Erro ao gerar cartão digital.",
+        true
+      );
+    }
+
+    if (botao) {
+      botao.disabled = false;
+      botao.textContent = "Gerar cartão";
+    }
+  }
+}
+    
 async function abrirPDFProponente(associado) {
   // Abrir imediatamente uma nova janela para evitar bloqueio de popup
   const novaJanela = window.open("", "_blank");
